@@ -1,15 +1,13 @@
-# 🚀 Welcome to your new awesome project!
+# 🚀 Eutectic metal cooling simulator
 
 This project has been created using **webpack-cli**, you can now run
-
 ```
 npm run build
 ```
+to bundle your application.
 
-or
-
+To run just use 
 ```
-yarn build
+npm run serve
 ```
-
-to bundle your application
+after installing the required dependencies
