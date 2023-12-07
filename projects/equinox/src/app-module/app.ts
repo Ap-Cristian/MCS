@@ -9,7 +9,7 @@ export async function initEqnx(): Promise<express.Application | undefined> {
     const port = APP_ENV.PORT;
 
     app.get(APP_ENV.DEFAULT_CUBE_ENDPOINT, (req, res) => {
-        res.sen('Hello World!');
+        res.send('Hello World!');
     })
 
     return app;
