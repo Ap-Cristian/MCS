@@ -1,3 +1,4 @@
+import { CubeShaderService } from "./services/cube-shader-service";
 import "./style.scss";
 
 class NotNormalizedHexColor{
@@ -17,13 +18,15 @@ class GlInitialContext{
     private comamndEncoder:GPUCommandEncoder;
     private pass:GPURenderPassEncoder;
 
+    private cubeService:CubeShaderService = new CubeShaderService();
+
 
     // GPUCommandEncoder --> contains commands speciffic for GPU to execute. In other words, in order to send a set of instruction to the gpu,
     // they'll have to be of type GPUCommandEncoder.
     
     // next step is to use the encoder to begin a Render Pass. - Render passes are when all drawing operations in WebGPU happen.
     
-    // watch out for async -> await on device/adapter request,webGPU doesnt like unintialized mem.
+    // watch out for async -> await on device/adapter request, webGPU doesnt like unintialized mem.
 
     constructor(){
         this.initVtxEng();

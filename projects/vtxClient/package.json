@@ -1,7 +1,7 @@
 {
   "name": "vtx-eng",
   "version": "1.0.0",
-  "description": "Engie for simulating eutectic metals hardening",
+  "description": "Engine for simulating eutectic metals hardening",
   "main": "index.ts",
   "scripts": {
     "test": "test",
@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@webgpu/types": "^0.1.38",
+    "axios": "^1.6.6",
     "css-loader": "^6.8.1",
     "http-server": "^14.1.1",
     "sass": "^1.69.5",
