@@ -13,7 +13,7 @@ const config = {
         path: path.resolve(__dirname, 'dist'),
     },
     devServer: {
-        open: true,
+        open: false,
         host: 'localhost',
     },
     plugins: [
@@ -56,8 +56,6 @@ const config = {
 module.exports = () => {
     if (isProduction) {
         config.mode = 'production';
-        
-        
         config.plugins.push(new WorkboxWebpackPlugin.GenerateSW());
         
     } else {

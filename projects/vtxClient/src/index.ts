@@ -1,171 +1,113 @@
-import { CubeShaderService } from "./services/cube-shader-service";
+import { Camera } from "./objects/camera/camera";
+import { Cell } from "./objects/cell/cell";
+import { Scene } from "./objects/scene/scene";
+import { WebGpuRenderer } from "./renderer";
+
 import "./style.scss";
 
-class NotNormalizedHexColor{
-    R:number = 0;
-    G:number = 0;
-    B:number = 0;
-    A:number = 0;
-}
-
-class GlInitialContext{
+class EntryPoint{
     private htmlCanvas:HTMLCanvasElement;
-    private context:GPUCanvasContext;
-    private gpu:GPU;
-    private adapter:GPUAdapter;
-    private device:GPUDevice;
-    private canvasFormat:GPUTextureFormat;
-    private comamndEncoder:GPUCommandEncoder;
-    private pass:GPURenderPassEncoder;
-
-    private cubeService:CubeShaderService = new CubeShaderService();
-
-
-    // GPUCommandEncoder --> contains commands speciffic for GPU to execute. In other words, in order to send a set of instruction to the gpu,
-    // they'll have to be of type GPUCommandEncoder.
-    
-    // next step is to use the encoder to begin a Render Pass. - Render passes are when all drawing operations in WebGPU happen.
-    
-    // watch out for async -> await on device/adapter request, webGPU doesnt like unintialized mem.
-
-    constructor(){
-        this.initVtxEng();
-    }
-
-    private normalizeHex(color:NotNormalizedHexColor):GPUColor{
-        return {r: color.R / 255, g:color.G / 255, b:color.B / 255, a:color.A};
-    }
-
-    private async initVtxEng(){
-        this.htmlCanvas = document.querySelector('canvas');
-        if(this.htmlCanvas){
-            console.log('[DEBUG] Found context canvas.  ');
-            this.resizeContextToWindow();   
-            window.addEventListener("resize", this.resizeContextToWindow);
-            await this.initContext();
-
-            this.canvasFormat = this.gpu.getPreferredCanvasFormat();
-            this.context.configure({
-                device: this.device,
-                format: this.canvasFormat
-            });
-            this.comamndEncoder = this.device.createCommandEncoder();
-            var clearColor:GPUColor = this.normalizeHex({R:0, G:29, B:46, A:1});
-            var colorAtt:GPURenderPassColorAttachment = {
-                view: this.context.getCurrentTexture().createView(),
-                loadOp: "clear",
-                clearValue: clearColor,
-                storeOp: "store",
-            };
-
-            //draw()
-            this.pass = this.comamndEncoder.beginRenderPass({
-                colorAttachments: [colorAtt]
-            });
-            this.drawSq();
-
-            this.pass.end();
-
-            var commandBuffer: GPUCommandBuffer = this.comamndEncoder.finish();
-            this.device.queue.submit([commandBuffer]);
-
-        }
-    }
-
-    private async initContext():Promise<void> {
-        if(navigator.gpu){
-            console.log("[DEBUG] WebGPU is supported by your browser.");
-            this.gpu = navigator.gpu;
-            this.adapter = await this.gpu.requestAdapter();
-            if (!this.adapter) {
-                throw new Error("[ERR!] No appropriate GPUAdapter found.");
-            }
-            this.device = await this.adapter.requestDevice();
-            if(!this.device){
-                throw new Error("[ERR!] No appropriate GPUDevice found.");
-            }
-            this.context = this.htmlCanvas.getContext('webgpu');
-        }
-        else{
-            console.log('[ERR!] Browser does not support webGPU.');
-        }
-    }
-
-    private drawSq(): void {
-        var vertices = new Float32Array([
-            //   X,    Y,
-            -0.8, -0.8, // Triangle 1 (Blue)
-            0.8, -0.8,
-            0.8, 0.8,
-
-            -0.8, -0.8, // Triangle 2 (Red)
-            0.8, 0.8,
-            -0.8, 0.8,
-        ]);
-        var vertexBuffer = this.device.createBuffer({
-            label: "Cell vertices",
-            size: vertices.byteLength,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        });
-        this.device.queue.writeBuffer(vertexBuffer, /*bufferOffset=*/0, vertices);
-
-        var vertexAttribute:GPUVertexAttribute={
-            format: "float32x2",
-            offset: 0,
-            shaderLocation: 0, // Position, see vertex shader
-        }
-        var vertexBufferLayout:GPUVertexBufferLayout = {
-            arrayStride: 8,
-            attributes: [vertexAttribute],
-        };
-
-        var cubeShaderModule = this.device.createShaderModule({
-            label: "Cell shader",
-            code: `
-            @vertex
-            fn vertexMain(@location(0) pos: vec2f) ->
-              @builtin(position) vec4f {
-              return vec4f(pos, 0, 1);
-            }
-        
-            @fragment
-            fn fragmentMain() -> @location(0) vec4f {
-              return vec4f(1, 0, 0, 1);
-            }
-            `
-        });
-
-        var cellPipeline = this.device.createRenderPipeline({
-            label: "Cell pipeline",
-            layout: "auto",
-            vertex: {
-              module: cubeShaderModule,
-              entryPoint: "vertexMain",
-              buffers: [vertexBufferLayout]
-            },
-            fragment: {
-              module: cubeShaderModule,
-              entryPoint: "fragmentMain",
-              targets: [{
-                format: this.canvasFormat
-              }]
-            }
-          });
-        
-        this.pass.setPipeline(cellPipeline);
-        this.pass.setVertexBuffer(0, vertexBuffer);
-        this.pass.draw(vertices.length / 2); // 6 vertices
-    }
-
+    private mainRenderer:WebGpuRenderer;
+    private mainCam:Camera;
+    private mainScene:Scene;
 
     private resizeContextToWindow():void {
-        if(typeof(this.htmlCanvas) == 'undefined'){
-            this.htmlCanvas = document.querySelector('canvas');
+        if(this.htmlCanvas){
+            console.log("[DEBUG] Window resized, updating...");
+            this.htmlCanvas.width = window.innerWidth;
+            this.htmlCanvas.height = window.innerHeight;
+            
+            this.mainCam.aspect = this.htmlCanvas.width / this.htmlCanvas.height;
+            this.mainRenderer.update(this.htmlCanvas);
         }
+    }
 
-        this.htmlCanvas.style.width = window.innerWidth.toString() + 'px';
-        this.htmlCanvas.style.height = window.innerHeight.toString() + 'px';
+    constructor(){
+        this.htmlCanvas = document.querySelector('canvas')
+
+        if (this.htmlCanvas) {
+            this.htmlCanvas.width = window.innerWidth
+            this.htmlCanvas.height = window.innerHeight
+
+            addEventListener("resize", ()=>{
+                this.resizeContextToWindow();
+            });
+
+            this.mainRenderer = new WebGpuRenderer();
+            this.mainRenderer.init(this.htmlCanvas).then((success)=>{
+                if(!success){ 
+                    console.error("[ERR] Failed to init main renderer, exiting...");
+                    return;
+                }
+                
+                this.mainCam = new Camera(this.htmlCanvas.width / this.htmlCanvas.height);
+                this.mainCam.Z = 10;
+                this.mainCam.Y = 10;
+
+                this.mainScene = new Scene();
+                
+                const testCell1 = new Cell({ X: -4, Y: 4}, { R: 0.9, G: 0, B: 0});
+                const cube1 = new Cell({ X: -4, Y: 4 }, { R: 0.9, G: 0.01, B: 0.01 });
+                const cube2 = new Cell({ Y: 4 }, { R: 0.01, G: 0.9, B: 0.01 });
+                const cube3 = new Cell({ X: 4, Y: 4 }, { R: 0.01, G: 0.01, B: 0.9 });
+
+                this.mainScene.add(testCell1);
+                this.mainScene.add(cube1);
+                this.mainScene.add(cube2);
+                this.mainScene.add(cube3);
+
+                const doFrame = () => {
+                    const now = Date.now() / 1000;
+                    
+                    this.mainRenderer.frame(this.mainCam, this.mainScene);
+                    requestAnimationFrame(doFrame);
+                };
+                requestAnimationFrame(doFrame);
+
+                this.htmlCanvas.onwheel = (event: WheelEvent) => {
+                    const delta = event.deltaY / 100;
+                    // no negative camera.z
+                    if(this.mainCam.Z > -delta) {
+                        this.mainCam.Z += event.deltaY / 100
+                    }
+                }
+                
+                // MOUSE DRAG
+                var mouseDown = false;
+                this.htmlCanvas.onmousedown = (event: MouseEvent) => {
+                    mouseDown = true;
+                
+                    lastMouseX = event.pageX;
+                    lastMouseY = event.pageY;
+                }
+                this.htmlCanvas.onmouseup = (event: MouseEvent) => {
+                    mouseDown = false;
+                }
+                var lastMouseX=-1; 
+                var lastMouseY=-1;
+                this.htmlCanvas.onmousemove = (event: MouseEvent) => {
+                    if (!mouseDown) {
+                        return;
+                    }
+                
+                    var mousex = event.pageX;
+                    var mousey = event.pageY;
+                
+                    if (lastMouseX > 0 && lastMouseY > 0) {
+                        const roty = mousex - lastMouseX;
+                        const rotx = mousey - lastMouseY;
+                
+                        this.mainCam.rotY += roty / 100;
+                        this.mainCam.rotX += rotx / 100;
+                    }
+                
+                    lastMouseX = mousex;
+                    lastMouseY = mousey;
+                }
+
+            });
+        }
     }
 }
 
-var initialContext = new GlInitialContext();
+var entryPoint = new EntryPoint();

@@ -36,6 +36,7 @@
     "@webgpu/types": "^0.1.38",
     "axios": "^1.6.6",
     "css-loader": "^6.8.1",
+    "gl-matrix": "^3.4.3",
     "http-server": "^14.1.1",
     "sass": "^1.69.5",
     "sass-loader": "^13.3.2",
