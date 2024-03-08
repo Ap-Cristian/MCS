@@ -6,21 +6,16 @@
  * 
  */
 
-export function fragmentShader(withTexture: boolean): string {
+export function fragmentShader(): string {
     // conditionally bind sampler and texture, only if texture is set
-    const bindSamplerAndTexture = withTexture ? `
-                @group(0) @binding(4) var mySampler: sampler;
-                @group(0) @binding(5) var myTexture: texture_2d<f32>;
-            ` : ``;
+    // const bindSamplerAndTexture = withTexture ? `
+    //             @group(0) @binding(4) var mySampler: sampler;
+    //             @group(0) @binding(5) var myTexture: texture_2d<f32>;
+    //         ` : ``;
 
     // conditionally do texture sampling
-    const returnStatement = withTexture ? `
-                                return vec4<f32>(textureSample(myTexture, mySampler, input.uv).xyz * lightingFactor, 1.0);
-                            ` : `
-                                return vec4<f32>(input.fragColor  * lightingFactor, 1.0);
-                            `;
 
-                            return  `
+    return  `
                             struct LightData {        // light xyz position
                                 lightPos : vec3<f32>,
                             };
@@ -38,7 +33,7 @@ export function fragmentShader(withTexture: boolean): string {
                             // constants for light
                             const ambientLightFactor : f32 = 0.25;     // ambient light
                             `
-                            + bindSamplerAndTexture +
+                            +
                             `
                             @fragment
                             fn main(input : FragmentInput) -> @location(0) vec4<f32> {
@@ -51,9 +46,8 @@ export function fragmentShader(withTexture: boolean): string {
                                 lightFactor = lambertFactor;
                 
                                 let lightingFactor: f32 = max(min(lightFactor, 1.0), ambientLightFactor);
-                        ` + 
-                                returnStatement +
-                        `
+
+                                return vec4<f32>(input.fragColor  * lightingFactor, 1.0);
                             }
                         `;
 }

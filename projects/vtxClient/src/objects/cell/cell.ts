@@ -6,22 +6,23 @@ import { cameraUniformBuffer, device, lightDataBuffer, lightDataSize } from "../
 import { vertices } from "../../misc/cellVertecies";
 import { vertexShader } from "../../misc/cellVertexShader"
 import { fragmentShader } from "../../misc/cellFragment";
+import { getColorBasedOnTemp } from "../../misc/colorTempMap";
 
-export class Cell{
-    public X:number = 0;
-    public Y:number = 0;
-    public Z:number = 0;
+export class Cell {
+    public X: number = 0;
+    public Y: number = 0;
+    public Z: number = 0;
 
-    public RotationX:number = 0;
-    public RotationY:number = 0;
-    public RotationZ:number = 0;
+    public RotationX: number = 0;
+    public RotationY: number = 0;
+    public RotationZ: number = 0;
 
-    public ScaleX:number = 1;
-    public ScaleY:number = 1;
-    public ScaleZ:number = 1;
-    
-    public HeatValue:number;
-    public Neighbours:Cell[];
+    public ScaleX: number = 1;
+    public ScaleY: number = 1;
+    public ScaleZ: number = 1;
+
+    public TempValue: number = 9999;
+    public Neighbours: Cell[];
 
     private defaultColor: Color = {
         R: 0.9,
@@ -42,10 +43,12 @@ export class Cell{
     private verticesBuffer: GPUBuffer;
     private colorBuffer: GPUBuffer;
 
-    private perVertex = ( 3 + 3 + 2 );      // 3 for position, 3 for normal, 2 for uv, 3 for color
+    private perVertex = (3 + 3 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
     private stride = this.perVertex * 4;    // stride = byte length of vertex data array 
 
-    constructor(parameter?: CellParameter, color?: Color, imageBitmap?: ImageBitmap) {
+    constructor(parameter?: CellParameter, temp?:number) {
+        temp ? this.TempValue = temp : 0;
+
         this.setTransformation(parameter);
         this.renderPipeline = device.createRenderPipeline({
             layout: 'auto',
@@ -71,7 +74,7 @@ export class Cell{
                             {
                                 // uv
                                 shaderLocation: 2,
-                               offset: (3 + 3) * 4,
+                                offset: (3 + 3) * 4,
                                 format: 'float32x2',
                             },
                         ],
@@ -79,7 +82,7 @@ export class Cell{
                 ],
             },
             fragment: {
-                module: device.createShaderModule({ code: fragmentShader(imageBitmap != null) }),
+                module: device.createShaderModule({ code: fragmentShader() }),
                 entryPoint: 'main',
                 targets: [
                     {
@@ -109,9 +112,9 @@ export class Cell{
         const mapping = new Float32Array(this.verticesBuffer.getMappedRange());
         for (let i = 0; i < vertices.length; i++) {
             // (3 * 4) + (3 * 4) + (2 * 4)
-            mapping.set([vertices[i].pos[0] * this.ScaleX, 
-                        vertices[i].pos[1] * this.ScaleY, 
-                        vertices[i].pos[2] * this.ScaleY], this.perVertex * i + 0);
+            mapping.set([vertices[i].pos[0] * this.ScaleX,
+            vertices[i].pos[1] * this.ScaleY,
+            vertices[i].pos[2] * this.ScaleY], this.perVertex * i + 0);
             mapping.set(vertices[i].norm, this.perVertex * i + 3);
             mapping.set(vertices[i].uv, this.perVertex * i + 6);
         }
@@ -122,14 +125,17 @@ export class Cell{
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
+        //COLOR BUFFER ASSIGNMENT
         this.colorBuffer = device.createBuffer({
             mappedAtCreation: true,
             size: Float32Array.BYTES_PER_ELEMENT * 3 + 4,
             usage: GPUBufferUsage.STORAGE,
         });
         const colorMapping = new Float32Array(this.colorBuffer.getMappedRange());
-        colorMapping.set(color ? [color.R, color.G, color.B] : [this.defaultColor.R, this.defaultColor.G, this.defaultColor.B], 0);
+        var tempColorValue = getColorBasedOnTemp(this.TempValue);
+        colorMapping.set(tempColorValue, 0);
         this.colorBuffer.unmap()
+        //
 
         const entries = [
             {
@@ -143,7 +149,7 @@ export class Cell{
             {
                 binding: 1,
                 resource: {
-                    buffer: this.colorBuffer ,
+                    buffer: this.colorBuffer,
                     offset: 0,
                     size: Float32Array.BYTES_PER_ELEMENT * 3 + 4,
                 },
@@ -164,37 +170,64 @@ export class Cell{
                     size: lightDataSize,
                 },
             },
-            
+
         ];
 
         // Texture
-        if (imageBitmap) {
-            let cubeTexture = device.createTexture({
-                size: [imageBitmap.width, imageBitmap.height, 1],
-                format: 'rgba8unorm',
-                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-            });
-            device.queue.copyExternalImageToTexture(
-                { source: imageBitmap },
-                { texture: cubeTexture },
-                [imageBitmap.width, imageBitmap.height, 1]
-            );
-            const sampler = device.createSampler({
-                magFilter: 'linear',
-                minFilter: 'linear',
-            });
 
-            entries.push({
-                binding: 4,
-                resource: sampler,
-            } as any)
-            entries.push({
-                binding: 5,
-                resource: cubeTexture.createView(),
-            } as any);
+        this.transformationBindGroup = device.createBindGroup({
+            layout: this.renderPipeline.getBindGroupLayout(0),
+            entries: entries as Iterable<GPUBindGroupEntry>,
+        });
+    }
 
-        }
+    private updateCellTempColor(){
+        this.colorBuffer = device.createBuffer({
+            mappedAtCreation: true,
+            size: Float32Array.BYTES_PER_ELEMENT * 3 + 4,
+            usage: GPUBufferUsage.STORAGE,
+        });
+        const colorMapping = new Float32Array(this.colorBuffer.getMappedRange());
 
+        var tempColorValue = getColorBasedOnTemp(this.TempValue);
+        colorMapping.set(tempColorValue, 0);
+        this.colorBuffer.unmap();
+
+        const entries = [
+            {
+                binding: 0,
+                resource: {
+                    buffer: this.transformationBuffer,
+                    offset: 0,
+                    size: this.matrixSize * 2,
+                },
+            },
+            {
+                binding: 1,
+                resource: {
+                    buffer: this.colorBuffer,
+                    offset: 0,
+                    size: Float32Array.BYTES_PER_ELEMENT * 3 + 4,
+                },
+            },
+            {
+                binding: 2,
+                resource: {
+                    buffer: cameraUniformBuffer,
+                    offset: 0,
+                    size: this.matrixSize,
+                },
+            },
+            {
+                binding: 3,
+                resource: {
+                    buffer: lightDataBuffer,
+                    offset: 0,
+                    size: lightDataSize,
+                },
+            },
+        ]
+            
         this.transformationBindGroup = device.createBindGroup({
             layout: this.renderPipeline.getBindGroupLayout(0),
             entries: entries as Iterable<GPUBindGroupEntry>,
@@ -203,8 +236,12 @@ export class Cell{
 
     public draw(passEncoder: GPURenderPassEncoder, device: GPUDevice) {
         this.updateTransformationMatrix()
-
-        passEncoder.setPipeline(this.renderPipeline);
+        this.updateCellTempColor();
+        
+        if(this.TempValue > 0)
+            this.TempValue--;
+        
+            passEncoder.setPipeline(this.renderPipeline);
         device.queue.writeBuffer(
             this.transformationBuffer,
             0,
@@ -246,7 +283,7 @@ export class Cell{
         if (parameter == null) {
             return;
         }
-
+        console.log("PARAMS:" + JSON.stringify(parameter))
         this.X = parameter.X ? parameter.X : 0;
         this.Y = parameter.Y ? parameter.Y : 0;
         this.Z = parameter.Z ? parameter.Z : 0;
