@@ -51,20 +51,21 @@ export class EntryPoint{
                 var currentX:number = -10;
                 var currentZ:number = -10;
 
+                var time1 = new Date();
 
                 for(var i = 0; i < 10; i++){
                     for(var j = 0; j < 10; j++){
                         currentX += 2;
                         this.mainScene.add(new Cell({X:currentX, Z:currentZ}, randomIntFromInterval(1, 9999)));
-                        console.log(this.mainScene);
                     }
-                    currentZ +=2;
+                    currentZ += 2;
                     currentX = -10;
                 }
-                // const cube1 = new Cell({ X: -4, Y: 0 });
-                // const cube3 = new Cell({ X: 4, Y: 0 });
+                // this.mainScene.add(new Cell({X:0, Z:0}, randomIntFromInterval(1, 9999)));
 
-                // this.mainScene.add([originPoint, cube1, cube3]);
+                var time2 = new Date();
+                var dtime = time2.getMilliseconds() - time1.getMilliseconds();
+                console.log("Cell init took: " + dtime.toString() + " ms\n");
 
                 const doFrame = () => {
                     const now = Date.now() / 1000;
@@ -75,10 +76,16 @@ export class EntryPoint{
                 requestAnimationFrame(doFrame);
 
                 this.htmlCanvas.onwheel = (event: WheelEvent) => {
-                    const delta = event.deltaY / 100;
-                    // no negative camera.z
-                    if(this.mainCam.Z > -delta) {
-                        this.mainCam.Z += event.deltaY / 100
+                    const wheelSpeed = event.deltaY / 5000;
+                    if(this.mainCam.fovy > 0.01 && wheelSpeed < 0){
+                        this.mainCam.fovy += wheelSpeed;
+                    }else if(this.mainCam.fovy <= 0.01){
+                        this.mainCam.Z += wheelSpeed;
+                    }
+                    if(wheelSpeed > 0 && this.mainCam.fovy <= 1){
+                        this.mainCam.fovy += wheelSpeed;
+                    }else if(wheelSpeed > 0 && this.mainCam.fovy > 1){
+                        this.mainCam.Z += wheelSpeed * 10;
                     }
                 }
                 

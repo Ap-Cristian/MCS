@@ -8,6 +8,8 @@ import { vertexShader } from "../../misc/cellVertexShader"
 import { fragmentShader } from "../../misc/cellFragment";
 import { getColorBasedOnTemp } from "../../misc/colorTempMap";
 
+const DEBUG_DISABLE_CELL_LOGIC = true;
+
 export class Cell {
     public X: number = 0;
     public Y: number = 0;
@@ -57,7 +59,7 @@ export class Cell {
                 entryPoint: 'main',
                 buffers: [
                     {
-                        arrayStride: this.stride, // ( 3 (pos) + 3 (norm) + 2 (uv) ) * 4 bytes
+                        arrayStride: this.stride, // ( 3 (pos) + 3 (norm) + 2 (uv) ) * 4 bytes,
                         attributes: [
                             {
                                 // position
@@ -182,56 +184,58 @@ export class Cell {
     }
 
     private updateCellTempColor(){
-        this.colorBuffer = device.createBuffer({
-            mappedAtCreation: true,
-            size: Float32Array.BYTES_PER_ELEMENT * 3 + 4,
-            usage: GPUBufferUsage.STORAGE,
-        });
-        const colorMapping = new Float32Array(this.colorBuffer.getMappedRange());
+        if (!DEBUG_DISABLE_CELL_LOGIC) {
+            this.colorBuffer = device.createBuffer({
+                mappedAtCreation: true,
+                size: Float32Array.BYTES_PER_ELEMENT * 3 + 4,
+                usage: GPUBufferUsage.STORAGE,
+            });
+            const colorMapping = new Float32Array(this.colorBuffer.getMappedRange());
 
-        var tempColorValue = getColorBasedOnTemp(this.TempValue);
-        colorMapping.set(tempColorValue, 0);
-        this.colorBuffer.unmap();
+            var tempColorValue = getColorBasedOnTemp(this.TempValue);
+            colorMapping.set(tempColorValue, 0);
+            this.colorBuffer.unmap();
 
-        const entries = [
-            {
-                binding: 0,
-                resource: {
-                    buffer: this.transformationBuffer,
-                    offset: 0,
-                    size: this.matrixSize * 2,
+            const entries = [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: this.transformationBuffer,
+                        offset: 0,
+                        size: this.matrixSize * 2,
+                    },
                 },
-            },
-            {
-                binding: 1,
-                resource: {
-                    buffer: this.colorBuffer,
-                    offset: 0,
-                    size: Float32Array.BYTES_PER_ELEMENT * 3 + 4,
+                {
+                    binding: 1,
+                    resource: {
+                        buffer: this.colorBuffer,
+                        offset: 0,
+                        size: Float32Array.BYTES_PER_ELEMENT * 3 + 4,
+                    },
                 },
-            },
-            {
-                binding: 2,
-                resource: {
-                    buffer: cameraUniformBuffer,
-                    offset: 0,
-                    size: this.matrixSize,
+                {
+                    binding: 2,
+                    resource: {
+                        buffer: cameraUniformBuffer,
+                        offset: 0,
+                        size: this.matrixSize,
+                    },
                 },
-            },
-            {
-                binding: 3,
-                resource: {
-                    buffer: lightDataBuffer,
-                    offset: 0,
-                    size: lightDataSize,
+                {
+                    binding: 3,
+                    resource: {
+                        buffer: lightDataBuffer,
+                        offset: 0,
+                        size: lightDataSize,
+                    },
                 },
-            },
-        ]
-            
-        this.transformationBindGroup = device.createBindGroup({
-            layout: this.renderPipeline.getBindGroupLayout(0),
-            entries: entries as Iterable<GPUBindGroupEntry>,
-        });
+            ]
+
+            this.transformationBindGroup = device.createBindGroup({
+                layout: this.renderPipeline.getBindGroupLayout(0),
+                entries: entries as Iterable<GPUBindGroupEntry>,
+            });
+        }
     }
 
     public draw(passEncoder: GPURenderPassEncoder, device: GPUDevice) {
@@ -247,7 +251,7 @@ export class Cell {
             0,
             this.transformMatrix.buffer,
             this.transformMatrix.byteOffset,
-            this.transformMatrix.byteLength
+            this.transformMatrix.byteLength 
         );
         device.queue.writeBuffer(
             this.transformationBuffer,
@@ -283,7 +287,6 @@ export class Cell {
         if (parameter == null) {
             return;
         }
-        console.log("PARAMS:" + JSON.stringify(parameter))
         this.X = parameter.X ? parameter.X : 0;
         this.Y = parameter.Y ? parameter.Y : 0;
         this.Z = parameter.Z ? parameter.Z : 0;

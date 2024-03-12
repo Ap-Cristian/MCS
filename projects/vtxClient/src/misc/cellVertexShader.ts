@@ -16,7 +16,7 @@ export function vertexShader(): string {
             // bind model/camera/color buffers
             @group(0) @binding(0) var<uniform> modelTransform    : Uniforms;
             @group(0) @binding(2) var<uniform> cameraTransform   : Camera;
-            @group(0) @binding(1) var<storage,read> color             : Color;
+            @group(0) @binding(1) var<storage,read> color        : Color;
             
             // output struct of this vertex shader
             struct VertexOutput {
