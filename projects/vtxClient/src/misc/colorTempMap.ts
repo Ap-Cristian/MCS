@@ -14,6 +14,5 @@ const CellTempColorsList = [
 ]
 
 export function getColorBasedOnTemp(temp:number) {
-    // console.log(Math.ceil(temp / COLOR_DEGREE_RANGE));
     return CellTempColorsList.at(Math.abs(Math.ceil(temp / COLOR_DEGREE_RANGE)));
 }

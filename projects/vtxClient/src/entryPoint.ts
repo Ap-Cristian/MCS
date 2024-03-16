@@ -4,8 +4,6 @@ import { Cell } from "./objects/cell/cell";
 import { Scene } from "./objects/scene/scene";
 import { WebGpuRenderer } from "./renderer";
 
-
-
 export class EntryPoint{
     private htmlCanvas:HTMLCanvasElement;
     private mainRenderer:WebGpuRenderer;

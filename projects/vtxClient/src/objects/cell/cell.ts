@@ -3,12 +3,12 @@ import { Color } from "../../misc/color";
 import { CellParameter } from "../../misc/cellParameter";
 import { cameraUniformBuffer, device, lightDataBuffer, lightDataSize } from "../../renderer";
 
-import { vertices } from "../../misc/cellVertecies";
-import { vertexShader } from "../../misc/cellVertexShader"
-import { fragmentShader } from "../../misc/cellFragment";
-import { getColorBasedOnTemp } from "../../misc/colorTempMap";
+import { vertices } from "../../misc/wgsl/cellVertecies";
 
-const DEBUG_DISABLE_CELL_LOGIC = true;
+import { getColorBasedOnTemp } from "../../misc/colorTempMap";
+import { CellShaderContainer } from "../../containers/cell-shader.container";
+
+const DEBUG_DISABLE_CELL_LOGIC = false;
 
 export class Cell {
     public X: number = 0;
@@ -32,9 +32,9 @@ export class Cell {
         B: 0.1,
     }
 
-    private matrixSize = 4 * 16; // 4x4 matrix
-    private offset = 256; // transformationBindGroup offset must be 256-byte aligned
-    private uniformBufferSize = this.offset;
+    private matrixSize:number = 4 * 16; // 4x4 matrix
+    private offset:number = 256; // transformationBindGroup offset must be 256-byte aligned
+    private uniformBufferSize:number = this.offset;
 
     private transformMatrix = mat4.create() as Float32Array;
     private rotationMatrix = mat4.create() as Float32Array;
@@ -45,17 +45,19 @@ export class Cell {
     private verticesBuffer: GPUBuffer;
     private colorBuffer: GPUBuffer;
 
-    private perVertex = (3 + 3 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
-    private stride = this.perVertex * 4;    // stride = byte length of vertex data array 
-
+    private perVertex:number = (3 + 3 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
+    private stride:number = this.perVertex * 4;    // stride = byte length of vertex data array 
+    private cellShaderContainer:CellShaderContainer;
+    
     constructor(parameter?: CellParameter, temp?:number) {
-        temp ? this.TempValue = temp : 0;
+        this.cellShaderContainer = CellShaderContainer.getInstance();
 
+        temp ? this.TempValue = temp : 0;
         this.setTransformation(parameter);
         this.renderPipeline = device.createRenderPipeline({
             layout: 'auto',
             vertex: {
-                module: device.createShaderModule({ code: vertexShader() }),
+                module: device.createShaderModule({ code: this.cellShaderContainer.vertexCode }),
                 entryPoint: 'main',
                 buffers: [
                     {
@@ -84,7 +86,7 @@ export class Cell {
                 ],
             },
             fragment: {
-                module: device.createShaderModule({ code: fragmentShader() }),
+                module: device.createShaderModule({ code: this.cellShaderContainer.fragmentCode }),
                 entryPoint: 'main',
                 targets: [
                     {
@@ -106,19 +108,20 @@ export class Cell {
         } as unknown as GPURenderPipelineDescriptor);
 
         this.verticesBuffer = device.createBuffer({
-            size: vertices.length * this.stride,
+            size: this.cellShaderContainer.vertexArray.length * this.stride, //wierd shit happening here
             usage: GPUBufferUsage.VERTEX,
             mappedAtCreation: true,
         });
 
         const mapping = new Float32Array(this.verticesBuffer.getMappedRange());
-        for (let i = 0; i < vertices.length; i++) {
+
+        for (let i = 0; i < this.cellShaderContainer.vertexArray.length; i++) {
             // (3 * 4) + (3 * 4) + (2 * 4)
-            mapping.set([vertices[i].pos[0] * this.ScaleX,
-            vertices[i].pos[1] * this.ScaleY,
-            vertices[i].pos[2] * this.ScaleY], this.perVertex * i + 0);
-            mapping.set(vertices[i].norm, this.perVertex * i + 3);
-            mapping.set(vertices[i].uv, this.perVertex * i + 6);
+            mapping.set([this.cellShaderContainer.vertexArray[i].pos[0] * this.ScaleX,
+            this.cellShaderContainer.vertexArray[i].pos[1] * this.ScaleY,
+            this.cellShaderContainer.vertexArray[i].pos[2] * this.ScaleY], this.perVertex * i + 0);
+            mapping.set(this.cellShaderContainer.vertexArray[i].norm, this.perVertex * i + 3);
+            mapping.set(this.cellShaderContainer.vertexArray[i].uv, this.perVertex * i + 6);
         }
         this.verticesBuffer.unmap();
 
