@@ -1,8 +1,16 @@
-import { initEqnx } from "./app-module/app";
-import { APP_ENV } from "./app-module/app-env";
+import { CellShaderContainer } from "./containers/cell-shader.container";
+import { EntryPoint } from "./entryPoint";
+import "./style.scss";
 
-initEqnx().then((app)=>{
-    app?.listen(APP_ENV.PORT, () => {
-        console.log(`Example app listening on port ${APP_ENV.PORT}`);
-    })
-}).catch(err => console.log(err));
+function initCellShaderResources(){
+    var cellShaderContainer = CellShaderContainer.getInstance();
+    cellShaderContainer.fetchData().then(()=>{
+        resumeAfterResourceLoad();
+    });
+}
+
+function resumeAfterResourceLoad(){
+    var entryPoint = new EntryPoint();
+}
+
+initCellShaderResources();
