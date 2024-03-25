@@ -110,14 +110,14 @@ export class WebGpuRenderer {
         );
 
         // LIGHT BUFFER
-        const lightPosition = scene.getPointLightPosition();
-        device.queue.writeBuffer(
-            lightDataBuffer,
-          0,
-          lightPosition.buffer,
-          lightPosition.byteOffset,
-          lightPosition.byteLength
-        );
+        // const lightPosition = scene.getPointLightPosition();
+        // device.queue.writeBuffer(
+        //     lightDataBuffer,
+        //   0,
+        //   lightPosition.buffer,
+        //   lightPosition.byteOffset,
+        //   lightPosition.byteLength
+        // );
 
         (this.renderPassDescriptor.colorAttachments as [GPURenderPassColorAttachment])[0].view = this.context
             .getCurrentTexture()
@@ -146,6 +146,6 @@ export class WebGpuRenderer {
     }
 
     private updateRenderPassDescriptor(canvas: HTMLCanvasElement) {
-        (this.renderPassDescriptor.depthStencilAttachment as GPURenderPassDepthStencilAttachment).view = this.depthTextureView(canvas);
+        // (this.renderPassDescriptor.depthStencilAttachment as GPURenderPassDepthStencilAttachment).view = this.depthTextureView(canvas);
     }
 }

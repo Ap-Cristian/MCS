@@ -7,6 +7,7 @@ import { vertices } from "../../misc/wgsl/cellVertecies";
 
 import { getColorBasedOnTemp } from "../../misc/colorTempMap";
 import { CellShaderContainer } from "../../containers/cell-shader.container";
+import { CellRenderPipeline } from "./cell.render.pipeline";
 
 const DEBUG_DISABLE_CELL_LOGIC = false;
 
@@ -39,7 +40,7 @@ export class Cell {
     private transformMatrix = mat4.create() as Float32Array;
     private rotationMatrix = mat4.create() as Float32Array;
 
-    private renderPipeline: GPURenderPipeline;
+    // private renderPipeline: GPURenderPipeline;
     private transformationBuffer: GPUBuffer;
     private transformationBindGroup: GPUBindGroup;
     private verticesBuffer: GPUBuffer;
@@ -47,65 +48,69 @@ export class Cell {
 
     private perVertex:number = (3 + 3 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
     private stride:number = this.perVertex * 4;    // stride = byte length of vertex data array 
+
+    //singletons
     private cellShaderContainer:CellShaderContainer;
+    private cellRenderPipeline:GPURenderPipeline;
     
     constructor(parameter?: CellParameter, temp?:number) {
         this.cellShaderContainer = CellShaderContainer.getInstance();
+        this.cellRenderPipeline = CellRenderPipeline.GetInstance().Pipeline;
 
         temp ? this.TempValue = temp : 0;
         this.setTransformation(parameter);
-        this.renderPipeline = device.createRenderPipeline({
-            layout: 'auto',
-            vertex: {
-                module: device.createShaderModule({ code: this.cellShaderContainer.vertexCode }),
-                entryPoint: 'main',
-                buffers: [
-                    {
-                        arrayStride: this.stride, // ( 3 (pos) + 3 (norm) + 2 (uv) ) * 4 bytes,
-                        attributes: [
-                            {
-                                // position
-                                shaderLocation: 0,
-                                offset: 0,
-                                format: 'float32x3',
-                            },
-                            {
-                                // norm
-                                shaderLocation: 1,
-                                offset: 3 * 4,
-                                format: 'float32x3',
-                            },
-                            {
-                                // uv
-                                shaderLocation: 2,
-                                offset: (3 + 3) * 4,
-                                format: 'float32x2',
-                            },
-                        ],
-                    } as GPUVertexBufferLayout,
-                ],
-            },
-            fragment: {
-                module: device.createShaderModule({ code: this.cellShaderContainer.fragmentCode }),
-                entryPoint: 'main',
-                targets: [
-                    {
-                        format: 'bgra8unorm' as GPUTextureFormat,
-                    },
-                ],
-            },
-            primitive: {
-                topology: 'triangle-list',
-                cullMode: 'back',
-            },
-            // Enable depth testing so that the fragment closest to the camera
-            // is rendered in front.
-            depthStencil: {
-                depthWriteEnabled: true,
-                depthCompare: 'less',
-                format: 'depth24plus-stencil8',
-            },
-        } as unknown as GPURenderPipelineDescriptor);
+        // this.renderPipeline = device.createRenderPipeline({
+        //     layout: 'auto',
+        //     vertex: {
+        //         module: device.createShaderModule({ code: this.cellShaderContainer.vertexCode }),
+        //         entryPoint: 'main',
+        //         buffers: [
+        //             {
+        //                 arrayStride: this.stride, // ( 3 (pos) + 3 (norm) + 2 (uv) ) * 4 bytes,
+        //                 attributes: [
+        //                     {
+        //                         // position
+        //                         shaderLocation: 0,
+        //                         offset: 0,
+        //                         format: 'float32x3',
+        //                     },
+        //                     {
+        //                         // norm
+        //                         shaderLocation: 1,
+        //                         offset: 3 * 4,
+        //                         format: 'float32x3',
+        //                     },
+        //                     {
+        //                         // uv
+        //                         shaderLocation: 2,
+        //                         offset: (3 + 3) * 4,
+        //                         format: 'float32x2',
+        //                     },
+        //                 ],
+        //             } as GPUVertexBufferLayout,
+        //         ],
+        //     },
+        //     fragment: {
+        //         module: device.createShaderModule({ code: this.cellShaderContainer.fragmentCode }),
+        //         entryPoint: 'main',
+        //         targets: [
+        //             {
+        //                 format: 'bgra8unorm' as GPUTextureFormat,
+        //             },
+        //         ],
+        //     },
+        //     primitive: {
+        //         topology: 'triangle-list',
+        //         cullMode: 'back',
+        //     },
+        //     // Enable depth testing so that the fragment closest to the camera
+        //     // is rendered in front.
+        //     depthStencil: {
+        //         depthWriteEnabled: true,
+        //         depthCompare: 'less',
+        //         format: 'depth24plus-stencil8',
+        //     },
+        // } as unknown as GPURenderPipelineDescriptor);
 
         this.verticesBuffer = device.createBuffer({
             size: this.cellShaderContainer.vertexArray.length * this.stride, //wierd shit happening here
@@ -181,9 +186,10 @@ export class Cell {
         // Texture
 
         this.transformationBindGroup = device.createBindGroup({
-            layout: this.renderPipeline.getBindGroupLayout(0),
+            layout: this.cellRenderPipeline.getBindGroupLayout(0),
             entries: entries as Iterable<GPUBindGroupEntry>,
         });
+        this.updateTransformationMatrix()
     }
 
     private updateCellTempColor(){
@@ -235,20 +241,19 @@ export class Cell {
             ]
 
             this.transformationBindGroup = device.createBindGroup({
-                layout: this.renderPipeline.getBindGroupLayout(0),
+                layout: this.cellRenderPipeline.getBindGroupLayout(0),
                 entries: entries as Iterable<GPUBindGroupEntry>,
             });
         }
     }
 
     public draw(passEncoder: GPURenderPassEncoder, device: GPUDevice) {
-        this.updateTransformationMatrix()
-        this.updateCellTempColor();
+        // this.updateCellTempColor();
         
-        if(this.TempValue > 0)
-            this.TempValue--;
+        // if(this.TempValue > 0)
+        //     this.TempValue--;
         
-            passEncoder.setPipeline(this.renderPipeline);
+        passEncoder.setPipeline(this.cellRenderPipeline);
         device.queue.writeBuffer(
             this.transformationBuffer,
             0,

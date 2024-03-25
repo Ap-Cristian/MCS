@@ -51,7 +51,7 @@ export class EntryPoint{
 
                 var time1 = new Date();
 
-                for(var i = 0; i < 10; i++){
+                for(var i = 0; i < 100; i++){
                     for(var j = 0; j < 10; j++){
                         currentX += 2;
                         this.mainScene.add(new Cell({X:currentX, Z:currentZ}, randomIntFromInterval(1, 9999)));

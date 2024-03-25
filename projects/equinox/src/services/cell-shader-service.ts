@@ -1,7 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 
 const MAIN_URL:string = 'http://localhost:1024';
-
 const CELL_ENDPOINT:string = '/cell';
 const FRAGMENT_SHADER:string = "/fragmentShader"; 
 const VERTEX_SHADER:string = "/vertexShader";
@@ -21,7 +20,6 @@ export class CellShaderService{
             throw ex;
         }
     }
-
     public static GetCellVertexShader():Promise<AxiosResponse<any,any>>{
         try{
             const responseVertex = axios.get(MAIN_URL + CELL_ENDPOINT + VERTEX_SHADER);

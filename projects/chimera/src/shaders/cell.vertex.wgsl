@@ -1,13 +1,13 @@
-struct Uniforms {     // 4x4 transform matrices
+struct Uniforms {               // 4x4 transform matrices
     transform : mat4x4<f32>,    // translate AND rotate
     rotate : mat4x4<f32>,       // rotate only
 };
 
-struct Camera {     // 4x4 transform matrix
+struct Camera {                 // 4x4 transform matrix
     matrix : mat4x4<f32>,
 };
 
-struct Color {        // RGB color
+struct Color {                  // RGB color
     color: vec3<f32>
 };
 
@@ -19,10 +19,8 @@ struct Color {        // RGB color
 // output struct of this vertex shader
 struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
-
     @location(0) fragColor : vec3<f32>,
     @location(1) fragNorm : vec3<f32>,
-    @location(2) uv : vec2<f32>,
     @location(3) fragPos : vec3<f32>,
 };
 
@@ -40,9 +38,6 @@ fn main(input: VertexInput) -> VertexOutput {
 
     output.Position = cameraTransform.matrix * transformedPosition;             // transformed with model & camera projection
     output.fragColor = color.color;                                             // fragment color from buffer
-    output.fragNorm = (modelTransform.rotate * vec4<f32>(input.norm, 1.0)).xyz; // transformed normal vector with model
-    output.uv = input.uv;                                                       // transformed uv
-    output.fragPos = transformedPosition.xyz;                                   // transformed fragment position with model
 
     return output;
 }
