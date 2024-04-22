@@ -1,5 +1,5 @@
 import { CellShaderContainer } from "./containers/cell-shader.container";
-import { EntryPoint } from "./entryPoint";
+import { Engine } from "./engine";
 import { cellWatcherClient } from "./services/cell-updater-service";
 import "./style.scss";
 
@@ -11,7 +11,7 @@ function initCellShaderResources(){
 }
 
 function resumeAfterResourceLoad(){
-    var entryPoint = new EntryPoint();
+    var simEngine = new Engine();
 }
 
 export function main(){

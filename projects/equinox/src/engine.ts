@@ -4,7 +4,11 @@ import { Cell } from "./objects/cell/cell";
 import { Scene } from "./objects/scene/scene";
 import { WebGpuRenderer } from "./renderer";
 
-export class EntryPoint{
+export const NUMBER_OF_CELLS_ON_ROW:number = 32;
+export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW * NUMBER_OF_CELLS_ON_ROW; 
+
+export class Engine{
+
     private htmlCanvas:HTMLCanvasElement;
     private mainRenderer:WebGpuRenderer;
     private mainCam:Camera;
@@ -40,38 +44,51 @@ export class EntryPoint{
                 }
                 
                 this.mainCam = new Camera(this.htmlCanvas.width / this.htmlCanvas.height);
-                this.mainCam.Z = 10;
-                this.mainCam.Y = 10;
-                this.mainScene = new Scene();
+                this.mainCam.Z = 100;
 
-                const originPoint = new Cell({ X: 0, Y: 0, ScaleX: 0.2, ScaleY: 0.2});
-                
-                var currentX:number = -10;
-                var currentZ:number = -10;
+                this.mainCam.rotX =  0.6600000000000001;
+                this.mainCam.rotY =  0.8500000000000001;
+
+                this.mainScene = new Scene();
 
                 var time1 = new Date();
 
-                for(var i = 0; i < 100; i++){
-                    for(var j = 0; j < 10; j++){
+                var currentX:number = 0;
+                var currentZ:number = 0;
+                var currentY:number = 0;
+                
+                for(var i = 0; i < NUMBER_OF_CELLS_ON_ROW; i++){
+                    for(var j = 0; j < NUMBER_OF_CELLS_ON_ROW; j++){
+                        // for(var k = 0; k < NUMBER_OF_CELLS_ON_ROW; k++){
+                            this.mainScene.add(new Cell({X:currentX, Y:currentY, Z:currentZ}, randomIntFromInterval(1, 9999)));
+                            // currentY += 2;
+                        // }
                         currentX += 2;
-                        this.mainScene.add(new Cell({X:currentX, Z:currentZ}, randomIntFromInterval(1, 9999)));
+                        // currentY = 0;
                     }
                     currentZ += 2;
-                    currentX = -10;
+                    currentX = 0;
                 }
-                // this.mainScene.add(new Cell({X:0, Z:0}, randomIntFromInterval(1, 9999)));
+                // this.mainCam.lookAt = this.mainScene.getObjects()[0].Transform;
 
+                //performance probe
                 var time2 = new Date();
                 var dtime = time2.getMilliseconds() - time1.getMilliseconds();
                 console.log("Cell init took: " + dtime.toString() + " ms\n");
+                //
+                this.mainRenderer.initCellsUniforms(this.mainScene, this.mainCam);
 
                 const doFrame = () => {
                     const now = Date.now() / 1000;
-                    
+                    // this.mainRenderer.initCellsUniforms(this.mainScene, this.mainCam);
+
+                    this.mainRenderer.update(this.htmlCanvas);
                     this.mainRenderer.frame(this.mainCam, this.mainScene);
+
                     requestAnimationFrame(doFrame);
                 };
-                requestAnimationFrame(doFrame);
+                //"That synchronization is taken care of by the requestAnimationFrame() method that is used to implement the animation."
+                requestAnimationFrame(doFrame); //used in order to sync CPU with GPU
 
                 this.htmlCanvas.onwheel = (event: WheelEvent) => {
                     const wheelSpeed = event.deltaY / 5000;
@@ -114,6 +131,9 @@ export class EntryPoint{
                 
                         this.mainCam.rotY += roty / 100;
                         this.mainCam.rotX += rotx / 100;
+                        // console.log("CAMERA_X ", this.mainCam.rotX)
+                        // console.log("CAMERA_Y ", this.mainCam.rotY)
+
                     }
                 
                     lastMouseX = mousex;
