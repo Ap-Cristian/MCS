@@ -1,4 +1,4 @@
-# 🚀 Eutectic metal cooling simulator
+# Metal Cooling Simulator (MCS)
 
 This project has been created using **webpack-cli**, you can now run
 ```
