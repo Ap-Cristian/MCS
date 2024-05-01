@@ -2,7 +2,7 @@ import { CellShaderContainer } from "../../containers/cell-shader.container";
 import { device } from "../../renderer";
 
 export class CellRenderPipeline{
-    private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
+    private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv, 3 for color
     private stride:number = this.perVertex * 4; //4 bytes
     private cellShaderContainer = CellShaderContainer.getInstance();
     public Pipeline:GPURenderPipeline;
@@ -19,16 +19,17 @@ export class CellRenderPipeline{
 
             vertexCompilationInfo.then((info)=>{
                 console.log("Vertex shader compilation complaints should appear after this ------")
-                for(const message in info.messages){
-                    console.error(message);
-                }
-            })
+                info.messages.forEach((message)=>{
+                  console.error(message);
+                })
+            });
             fragmentCompilationInfo.then((info)=>{
                 console.log("Fragment shader compilation complaints should appear after this ------")
-                for(const message in info.messages){
-                    console.error(message);
-                }
-            })
+                info.messages.forEach((message)=>{
+                  console.error(message);
+                })
+            });
+
                 this.Pipeline = device.createRenderPipeline({
                 layout: 'auto',
                 vertex: {
@@ -47,7 +48,7 @@ export class CellRenderPipeline{
                           shaderLocation: 1,
                           offset: 4,
                           format: 'float32x2',
-                        },
+                        }
                       ],
                     },
                   ],

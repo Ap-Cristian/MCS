@@ -4,7 +4,7 @@ import { Cell } from "./objects/cell/cell";
 import { Scene } from "./objects/scene/scene";
 import { WebGpuRenderer } from "./renderer";
 
-export const NUMBER_OF_CELLS_ON_ROW:number = 32;
+export const NUMBER_OF_CELLS_ON_ROW:number = 200;
 export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW * NUMBER_OF_CELLS_ON_ROW; 
 
 export class Engine{

@@ -176,7 +176,6 @@ export class Cell {
         mat4.rotateX(rotate, rotate, this.RotationX);
         mat4.rotateY(rotate, rotate, this.RotationY);
         mat4.rotateZ(rotate, rotate, this.RotationZ);
-
         // APPLY
         mat4.copy(this.TransformMatrix, transform)
         mat4.copy(this.RotationMatrix, rotate)
@@ -191,7 +190,7 @@ export class Cell {
         this.Y = parameter.Y ? parameter.Y : 0;
         this.Z = parameter.Z ? parameter.Z : 0;
 
-        this.RotationX = parameter.RotX ? parameter.RotX : 0;
+        this.RotationX = parameter.RotX ? parameter.RotX : 4;
         this.RotationY = parameter.RotY ? parameter.RotY : 0;
         this.RotationZ = parameter.RotZ ? parameter.RotZ : 0;
 

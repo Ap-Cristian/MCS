@@ -43,29 +43,87 @@
 //     return output;
 // }
 
-struct Uniforms {
-  //size has to be set manually which is bad
-  //size if number of elements ^2
-  modelViewProjectionMatrix : array<mat4x4f, 1024>
+fn translateMatrix(translation: vec3f) -> mat4x4<f32> {
+    return mat4x4<f32>(
+        vec4(1.0, 0.0, 0.0, 0.0),
+        vec4(0.0, 1.0, 0.0, 0.0),
+        vec4(0.0, 0.0, 1.0, 0.0),
+        vec4(translation, 1.0)
+    );
 }
 
-@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+fn rotationMatrix(rotation: vec3f) -> mat4x4<f32> {
+    let cosX = cos(rotation.x);
+    let sinX = sin(rotation.x);
+
+    let cosY = cos(rotation.y);
+    let sinY = sin(rotation.y);
+
+    let cosZ = cos(rotation.z);
+    let sinZ = sin(rotation.z);
+
+    let rotationX = mat4x4<f32>(
+        vec4(1.0, 0.0, 0.0, 0.0),
+        vec4(0.0, cosX, -sinX, 0.0),
+        vec4(0.0, sinX, cosX, 0.0),
+        vec4(0.0, 0.0, 0.0, 1.0),
+    );
+
+    let rotationY = mat4x4<f32>(
+        vec4(cosY, 0.0, sinY, 0.0),
+        vec4(0.0, 1.0, 0.0, 0.0),
+        vec4(-sinY, 0.0, cosY, 0.0),
+        vec4(0.0, 0.0, 0.0, 1.0),
+    );
+
+    let rotationZ = mat4x4<f32>(
+        vec4(cosZ, -sinZ, 0.0, 0.0),
+        vec4(sinZ, cosZ, 0.0, 0.0),
+        vec4(0.0, 0.0, 1.0, 0.0),
+        vec4(0.0, 0.0, 0.0, 1.0),
+    );
+
+    return rotationX * rotationY * rotationZ;
+}
+
+struct CellPositions {
+  position: array<vec3f>,
+};
+
+struct CellScales {
+  scale: array<vec3f>,
+};
+
+struct CellRotations {
+  rotation: array<vec3f>,
+};
+
+@group(0) @binding(0) var<storage, read> cellsRotation :        CellRotations;
+@group(0) @binding(1) var<storage, read> cellsPositions :       CellPositions;
+@group(0) @binding(2) var<uniform> cameraViewProjectionMatrix : mat4x4f;
 
 struct VertexOutput {
-  @builtin(position) Position : vec4f,
-  @location(0) fragUV : vec2f,
-  @location(1) fragPosition : vec4f,
+  @builtin(position) Position: vec4f,
+  @location(0) fragUV: vec2f,
+  @location(1) fragPosition: vec4f,
+}
+
+struct VertexInput {
+  @builtin(instance_index) instanceIdx: u32,
+  @location(0) position: vec4f,
+  @location(1) uv: vec2f
 }
 
 @vertex
-fn mainVertex(
-  @builtin(instance_index) instanceIdx : u32,
-  @location(0) position : vec4f,
-  @location(1) uv : vec2f
-) -> VertexOutput {
-  var output : VertexOutput;
-  output.Position = uniforms.modelViewProjectionMatrix[instanceIdx] * position;
-  output.fragUV = uv;
-  output.fragPosition = 0.5 * (position + vec4(1.0));  
-  return output;
+fn mainVertex(input: VertexInput) -> VertexOutput {
+    var output: VertexOutput;
+
+    var cellTranslationMatrix: mat4x4<f32> = translateMatrix(cellsPositions.position[input.instanceIdx]);
+    var rotationTranslationMatrix: mat4x4<f32> = rotationMatrix(cellsRotation.rotation[input.instanceIdx]);
+    var rotatedCellTransform: mat4x4<f32> = cellTranslationMatrix * rotationTranslationMatrix;
+
+    output.Position = rotatedCellTransform * input.position * cameraViewProjectionMatrix;
+    output.fragUV = input.uv;
+    output.fragPosition = 0.5 * (input.position + vec4(1.0));
+    return output;
 }

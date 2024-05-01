@@ -24,12 +24,19 @@ export class WebGpuRenderer {
     private presentationSize: number[];
     private cellRenderPipeline:GPURenderPipeline;
     
-    private uniformBuffer:GPUBuffer;
-    private colorBuffer:GPUBuffer;
+    private rotationBuffer:GPUBuffer;
+    private scaleBuffer:GPUBuffer;
+    private positionBuffer:GPUBuffer;
+    private cameraProjectionBuffer:GPUBuffer;
 
-    private cellsTransformMatrices:Float32Array = new Float32Array(NUMBER_OF_CELLS * 16);
+    private positionArray           = new Float32Array(NUMBER_OF_CELLS * 3);
+    private rotationArray           = new Float32Array(NUMBER_OF_CELLS * 3);
+    private scaleArray              = new Float32Array(NUMBER_OF_CELLS * 3);
+    private cameraProjectionArray   = new Float32Array(16);
+
+
+
     private MVPMatrices:Float32Array = new Float32Array(NUMBER_OF_CELLS * 16);
-    private cellsRotationMatrices:Float32Array = new Float32Array();
 
     private verticesBuffer: GPUBuffer;
 
@@ -129,43 +136,84 @@ export class WebGpuRenderer {
         var currentMatStep = 0;
 
         var cellsModelsTranformationMatrixes = new Array<Mat4>(NUMBER_OF_CELLS);
+        var currentMemOffset = 0;
         for(let i = 0; i < NUMBER_OF_CELLS; i++){
-            cellsModelsTranformationMatrixes[i] = objects[i].TransformMatrix;
+            cellsModelsTranformationMatrixes[i] = objects[i].TransformMatrix;//
+
+            this.positionArray[currentMemOffset] = objects[i].X;
+            this.rotationArray[currentMemOffset] = objects[i].RotationX;
+            this.scaleArray[currentMemOffset]    = objects[i].ScaleX;
+            currentMemOffset++;
+
+            this.positionArray[currentMemOffset] = objects[i].Y;
+            this.rotationArray[currentMemOffset] = objects[i].RotationY;
+            this.scaleArray[currentMemOffset]    = objects[i].ScaleY;
+            currentMemOffset++;
+
+            this.positionArray[currentMemOffset] = objects[i].Z;
+            this.rotationArray[currentMemOffset] = objects[i].RotationZ;
+            this.scaleArray[currentMemOffset]    = objects[i].ScaleZ;
+            currentMemOffset++;
         }
 
         currentMatStep = 0;
         var projectionAppliedResultMat = mat4.create();
 
+        //Model view projection matrix
         for(let i = 0; i < NUMBER_OF_CELLS; i++){
             mat4.multiply(camera.getCameraViewProjMatrix(), cellsModelsTranformationMatrixes[i], projectionAppliedResultMat);
             this.MVPMatrices.set(projectionAppliedResultMat, currentMatStep);
             currentMatStep += 4*4;
         }
+        //
 
-        console.log("DEV_VIDEO_MEM_SIZE: ", device.limits.maxBufferSize)
-        console.log("DEV_VIDEO_MEM_SIZE: ", device.limits.maxUniformBufferBindingSize)
+        console.log("DEV_VIDEO_MAX_BUFFER_MEM_SIZE: ", device.limits.maxBufferSize)
+        console.log("DEV_VIDEO_MAX_UNIFORM_MEM_SIZE: ", device.limits.maxUniformBufferBindingSize)
 
         var uniformBindingsCount = 1024 > 4 * 16 * NUMBER_OF_CELLS ? 1024 : 4 * 16 * NUMBER_OF_CELLS
 
-        this.uniformBuffer = device.createBuffer({
-            size: 1024 > 4 * 16 * NUMBER_OF_CELLS ? 1024 : 4 * 16 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+        this.positionBuffer = device.createBuffer({
+            size: 1024 > 4 * 3 * NUMBER_OF_CELLS ? 1024 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        })
+        this.scaleBuffer = device.createBuffer({
+            size: 1024 > 4 * 3 * NUMBER_OF_CELLS ? 1024 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        })
+        this.rotationBuffer = device.createBuffer({
+            size: 1024 > 4 * 3 * NUMBER_OF_CELLS ? 1024 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        })
+        this.cameraProjectionBuffer = device.createBuffer({
+            size: 1024, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
-        
+
         var uniformBindGroupEntries:Iterable<GPUBindGroupEntry> = [
             {
-                binding: 0,
+                binding: 0,      
                 resource: {
-                  buffer: this.uniformBuffer,
-                },
+                  buffer: this.rotationBuffer,
+                }
             },
-        ] as Iterable<GPUBindGroupEntry>;
+            {
+                binding: 1,
+                resource: {                         //position
+                  buffer: this.positionBuffer,
+                }
+            },
+            {
+                binding: 2,
+                resource: {                         //position
+                  buffer: this.cameraProjectionBuffer,
+                }
+            }
+        ];
 
         this.uniformBindGroup = device.createBindGroup({
             layout: this.cellRenderPipeline.getBindGroupLayout(0),
             entries: uniformBindGroupEntries
         });
-        
         this.verticesBuffer = device.createBuffer({
             size: this.cellShaderContainer.vertexArray.length * this.stride, //wierd shit happening here
             usage: GPUBufferUsage.VERTEX,
@@ -212,7 +260,7 @@ export class WebGpuRenderer {
             console.error("[ERR] Failed to init renderer!\n Check 'Update' function");
             return;
         }
-
+        
         this.updateRenderPassDescriptor(canvas);
     }
 
@@ -227,14 +275,39 @@ export class WebGpuRenderer {
             console.error("[ERR] Failed to init renderer!\n Check 'Frame' function");
             return;
         }
+        this.cameraProjectionArray.set(camera.getCameraViewProjMatrix(), 0);
+        device.queue.writeBuffer(
+            this.scaleBuffer,  //write to transformation buffer which is then used into the transformation bind group trough the entries var on line 98 
+            0,
+            this.scaleArray.buffer,
+            this.scaleArray.byteOffset,
+            this.scaleArray.byteLength 
+        );
 
         device.queue.writeBuffer(
-            this.uniformBuffer,  //write to transformation buffer which is then used into the transformation bind group trough the entries var on line 98 
+            this.positionBuffer,  //write to transformation buffer which is then used into the transformation bind group trough the entries var on line 98 
             0,
-            this.MVPMatrices.buffer,
-            this.MVPMatrices.byteOffset,
-            this.MVPMatrices.byteLength 
+            this.positionArray.buffer,
+            this.positionArray.byteOffset,
+            this.positionArray.byteLength 
         );
+
+        device.queue.writeBuffer(
+            this.rotationBuffer,  //write to transformation buffer which is then used into the transformation bind group trough the entries var on line 98 
+            0,
+            this.rotationArray.buffer,
+            this.rotationArray.byteOffset,
+            this.rotationArray.byteLength 
+        );
+
+        device.queue.writeBuffer(
+            this.cameraProjectionBuffer,  //write to transformation buffer which is then used into the transformation bind group trough the entries var on line 98 
+            0,
+            this.cameraProjectionArray.buffer,
+            this.cameraProjectionArray.byteOffset,
+            this.cameraProjectionArray.byteLength 
+        );
+
 
         (this.renderPassDescriptor.colorAttachments as [GPURenderPassColorAttachment])[0].view = this.context
             .getCurrentTexture()
