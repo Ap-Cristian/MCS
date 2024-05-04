@@ -51,6 +51,8 @@ export class WebGpuRenderer {
     private depthTexture:GPUTexture;
     private frameErrorProbed:boolean = false;
 
+    private renderPassColorAttachment: GPURenderPassColorAttachment;
+    private currentGpuTexture: GPUTexture;
     constructor() {
         this.cellShaderContainer = CellShaderContainer.getInstance();
     }
@@ -94,13 +96,13 @@ export class WebGpuRenderer {
               {
                 view: undefined, // Assigned later
           
-                clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+                clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
                 loadOp: 'clear',
                 storeOp: 'store',
               },
             ],
             depthStencilAttachment: {
-              view: this.depthTexture.createView(),
+              view: this.depthTextureView(canvas),
               depthLoadOp: 'clear',
               depthClearValue: 1.0,
               depthStoreOp: 'store',
@@ -135,10 +137,8 @@ export class WebGpuRenderer {
         var objects = scene.getObjects();
         var currentMatStep = 0;
 
-        var cellsModelsTranformationMatrixes = new Array<Mat4>(NUMBER_OF_CELLS);
         var currentMemOffset = 0;
         for(let i = 0; i < NUMBER_OF_CELLS; i++){
-            cellsModelsTranformationMatrixes[i] = objects[i].TransformMatrix;//
 
             this.positionArray[currentMemOffset] = objects[i].X;
             this.rotationArray[currentMemOffset] = objects[i].RotationX;
@@ -160,32 +160,32 @@ export class WebGpuRenderer {
         var projectionAppliedResultMat = mat4.create();
 
         //Model view projection matrix
-        for(let i = 0; i < NUMBER_OF_CELLS; i++){
-            mat4.multiply(camera.getCameraViewProjMatrix(), cellsModelsTranformationMatrixes[i], projectionAppliedResultMat);
-            this.MVPMatrices.set(projectionAppliedResultMat, currentMatStep);
-            currentMatStep += 4*4;
-        }
+        // for(let i = 0; i < NUMBER_OF_CELLS; i++){
+        //     mat4.multiply(camera.getCameraViewProjMatrix(), cellsModelsTranformationMatrixes[i], projectionAppliedResultMat);
+        //     this.MVPMatrices.set(projectionAppliedResultMat, currentMatStep);
+        //     currentMatStep += 4*4;
+        // }
         //
 
         console.log("DEV_VIDEO_MAX_BUFFER_MEM_SIZE: ", device.limits.maxBufferSize)
         console.log("DEV_VIDEO_MAX_UNIFORM_MEM_SIZE: ", device.limits.maxUniformBufferBindingSize)
 
-        var uniformBindingsCount = 1024 > 4 * 16 * NUMBER_OF_CELLS ? 1024 : 4 * 16 * NUMBER_OF_CELLS
+        // var uniformBindingsCount = 1024 > 4 * 16 * NUMBER_OF_CELLS ? 1024 : 4 * 16 * NUMBER_OF_CELLS
 
         this.positionBuffer = device.createBuffer({
-            size: 1024 > 4 * 3 * NUMBER_OF_CELLS ? 1024 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            size: 4 * 3 * NUMBER_OF_CELLS < 16 ? 16 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
         this.scaleBuffer = device.createBuffer({
-            size: 1024 > 4 * 3 * NUMBER_OF_CELLS ? 1024 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            size:  4 * 3 * NUMBER_OF_CELLS < 16 ? 16 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
         this.rotationBuffer = device.createBuffer({
-            size: 1024 > 4 * 3 * NUMBER_OF_CELLS ? 1024 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            size:  4 * 3 * NUMBER_OF_CELLS < 16 ? 16 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
         this.cameraProjectionBuffer = device.createBuffer({
-            size: 1024, // MEM SIZE EXCEDED
+            size: 16 * 4, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
 
@@ -237,6 +237,8 @@ export class WebGpuRenderer {
             vertexByteOffset += 4;
         }
         this.verticesBuffer.unmap();
+        
+        this.renderPassColorAttachment = (this.renderPassDescriptor.colorAttachments as [GPURenderPassColorAttachment])[0];
 
         if(!this.frameErrorProbed){
             //temp error handling
@@ -276,6 +278,7 @@ export class WebGpuRenderer {
             return;
         }
         this.cameraProjectionArray.set(camera.getCameraViewProjMatrix(), 0);
+
         device.queue.writeBuffer(
             this.scaleBuffer,  //write to transformation buffer which is then used into the transformation bind group trough the entries var on line 98 
             0,
@@ -308,10 +311,8 @@ export class WebGpuRenderer {
             this.cameraProjectionArray.byteLength 
         );
 
-
-        (this.renderPassDescriptor.colorAttachments as [GPURenderPassColorAttachment])[0].view = this.context
-            .getCurrentTexture()
-            .createView();
+        var gpuCurrentTexture = this.context.getCurrentTexture();
+        this.renderPassColorAttachment.view = gpuCurrentTexture.createView();
 
         const commandEncoder = device.createCommandEncoder();
         const passEncoder = commandEncoder.beginRenderPass(this.renderPassDescriptor);
@@ -359,6 +360,6 @@ export class WebGpuRenderer {
     }
 
     private updateRenderPassDescriptor(canvas: HTMLCanvasElement) {
-        (this.renderPassDescriptor.depthStencilAttachment as GPURenderPassDepthStencilAttachment).view = this.depthTextureView(canvas);
+        // (this.renderPassDescriptor.depthStencilAttachment as GPURenderPassDepthStencilAttachment).view = this.depthTextureView(canvas); REALLY BAD, UNCOMMENT AND MEMORY OVERFLOWS
     }
 }

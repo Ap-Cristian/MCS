@@ -52,50 +52,118 @@ fn translateMatrix(translation: vec3f) -> mat4x4<f32> {
     );
 }
 
-fn rotationMatrix(rotation: vec3f) -> mat4x4<f32> {
-    let cosX = cos(rotation.x);
-    let sinX = sin(rotation.x);
+fn rotateX(m:mat4x4<f32>, angleInRadians:f32) -> mat4x4<f32>{
+  var res = mat4x4<f32>(
+    vec4(m[0][0], m[0][1], m[0][2], m[0][3]),
+    vec4(0.0,     0.0,     0.0,     0.0    ),
+    vec4(0.0,     0.0,     0.0,     0.0    ),
+    vec4(m[3][0], m[3][1], m[3][2], m[3][3]),
+  );
 
-    let cosY = cos(rotation.y);
-    let sinY = sin(rotation.y);
+  let m10 = m[1][0];
+  let m11 = m[1][1];
+  let m12 = m[1][2];
+  let m13 = m[1][3];
+  
+  let m20 = m[2][0];
+  let m21 = m[2][1];
+  let m22 = m[2][2];
+  let m23 = m[2][3];
 
-    let cosZ = cos(rotation.z);
-    let sinZ = sin(rotation.z);
+  let c = cos(angleInRadians);
+  let s = sin(angleInRadians);
 
-    let rotationX = mat4x4<f32>(
-        vec4(1.0, 0.0, 0.0, 0.0),
-        vec4(0.0, cosX, -sinX, 0.0),
-        vec4(0.0, sinX, cosX, 0.0),
-        vec4(0.0, 0.0, 0.0, 1.0),
-    );
+  res[1][0]  = c * m10 + s * m20;
+  res[1][1]  = c * m11 + s * m21;
+  res[1][2]  = c * m12 + s * m22;
+  res[1][3]  = c * m13 + s * m23;
 
-    let rotationY = mat4x4<f32>(
-        vec4(cosY, 0.0, sinY, 0.0),
-        vec4(0.0, 1.0, 0.0, 0.0),
-        vec4(-sinY, 0.0, cosY, 0.0),
-        vec4(0.0, 0.0, 0.0, 1.0),
-    );
+  res[2][0]  = c * m20 - s * m10;
+  res[2][1]  = c * m21 - s * m11;
+  res[2][2] = c * m22 - s * m12;
+  res[2][3] = c * m23 - s * m13;
 
-    let rotationZ = mat4x4<f32>(
-        vec4(cosZ, -sinZ, 0.0, 0.0),
-        vec4(sinZ, cosZ, 0.0, 0.0),
-        vec4(0.0, 0.0, 1.0, 0.0),
-        vec4(0.0, 0.0, 0.0, 1.0),
-    );
+  return res;
+}
 
-    return rotationX * rotationY * rotationZ;
+fn rotateY(m:mat4x4<f32>, angleInRadians:f32) -> mat4x4<f32>{
+  var res = mat4x4<f32>(
+    vec4(0.0,     0.0,     0.0,     0.0    ),
+    vec4(m[1][0], m[1][1], m[1][2], m[1][3]),
+    vec4(0.0,     0.0,     0.0,     0.0    ),
+    vec4(m[3][0], m[3][1], m[3][2], m[3][3]),
+  );
+
+  let m00 = m[0][0];
+  let m01 = m[0][1];
+  let m02 = m[0][2];
+  let m03 = m[0][3];
+  
+  let m20 = m[2][0];
+  let m21 = m[2][1];
+  let m22 = m[2][2];
+  let m23 = m[2][3];
+
+  let c = cos(angleInRadians);
+  let s = sin(angleInRadians);
+
+  res[0][0] = c * m00 + s * m20;
+  res[0][1] = c * m01 + s * m21;
+  res[0][2] = c * m02 + s * m22;
+  res[0][3] = c * m03 + s * m23;
+
+  res[2][0] = c * m20 - s * m00;
+  res[2][1] = c * m21 - s * m01;
+  res[2][2] = c * m22 - s * m02;
+  res[2][3] = c * m23 - s * m03;
+
+  return res;
+}
+
+fn rotateZ(m:mat4x4<f32>, angleInRadians:f32) -> mat4x4<f32>{
+  var res = mat4x4<f32>(
+    vec4(0.0,     0.0,     0.0,     0.0    ),
+    vec4(0.0,     0.0,     0.0,     0.0    ),
+    vec4(m[2][0], m[2][1], m[2][2], m[2][3]),
+    vec4(m[3][0], m[3][1], m[3][2], m[3][3]),
+  );
+
+  let m00 = m[0][0];
+  let m01 = m[0][1];
+  let m02 = m[0][2];
+  let m03 = m[0][3];
+  
+  let m10 = m[1][0];
+  let m11 = m[1][1];
+  let m12 = m[1][2];
+  let m13 = m[1][3];
+
+  let c = cos(angleInRadians);
+  let s = sin(angleInRadians);
+
+  res[0][0] = c * m00 + s * m10;
+  res[0][1] = c * m01 + s * m11;
+  res[0][2] = c * m02 + s * m12;
+  res[0][3] = c * m03 + s * m13;
+
+  res[1][0] = c * m10 - s * m00;
+  res[1][1] = c * m11 - s * m01;
+  res[1][2] = c * m12 - s * m02;
+  res[1][3] = c * m13 - s * m03;
+
+  return res;
 }
 
 struct CellPositions {
-  position: array<vec3f>,
+  position: array<f32>,
 };
 
 struct CellScales {
-  scale: array<vec3f>,
+  scale: array<f32>,
 };
 
 struct CellRotations {
-  rotation: array<vec3f>,
+  rotation: array<f32>,
 };
 
 @group(0) @binding(0) var<storage, read> cellsRotation :        CellRotations;
@@ -117,12 +185,23 @@ struct VertexInput {
 @vertex
 fn mainVertex(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
-
-    var cellTranslationMatrix: mat4x4<f32> = translateMatrix(cellsPositions.position[input.instanceIdx]);
-    var rotationTranslationMatrix: mat4x4<f32> = rotationMatrix(cellsRotation.rotation[input.instanceIdx]);
-    var rotatedCellTransform: mat4x4<f32> = cellTranslationMatrix * rotationTranslationMatrix;
-
-    output.Position = rotatedCellTransform * input.position * cameraViewProjectionMatrix;
+    var cellPositionVec : vec3f = vec3f(
+      cellsPositions.position[input.instanceIdx * 3 + 0],
+      cellsPositions.position[input.instanceIdx * 3 + 1],
+      cellsPositions.position[input.instanceIdx * 3 + 2]
+    );
+    var cellRotationVec : vec3f = vec3f(
+      cellsRotation.rotation[input.instanceIdx * 3 + 0],
+      cellsRotation.rotation[input.instanceIdx * 3 + 1],
+      cellsRotation.rotation[input.instanceIdx * 3 + 2]
+    );
+    var cellTranslationMatrix: mat4x4<f32> = translateMatrix(cellPositionVec);
+    
+    var rotationTranslationMatrix: mat4x4<f32> = rotateX(cellTranslationMatrix, cellRotationVec[0]);
+    rotationTranslationMatrix = rotateY(rotationTranslationMatrix, cellRotationVec[1]);
+    rotationTranslationMatrix = rotateZ(rotationTranslationMatrix, cellRotationVec[2]);
+    
+    output.Position = cameraViewProjectionMatrix * rotationTranslationMatrix  * input.position;
     output.fragUV = input.uv;
     output.fragPosition = 0.5 * (input.position + vec4(1.0));
     return output;

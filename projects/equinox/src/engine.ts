@@ -1,11 +1,12 @@
+import { vec3 } from "gl-matrix";
 import { randomIntFromInterval } from "./misc/math";
 import { Camera } from "./objects/camera/camera";
 import { Cell } from "./objects/cell/cell";
 import { Scene } from "./objects/scene/scene";
 import { WebGpuRenderer } from "./renderer";
 
-export const NUMBER_OF_CELLS_ON_ROW:number = 200;
-export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW * NUMBER_OF_CELLS_ON_ROW; 
+export const NUMBER_OF_CELLS_ON_ROW:number = 10;
+export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW ** 3; 
 
 export class Engine{
 
@@ -44,43 +45,44 @@ export class Engine{
                 }
                 
                 this.mainCam = new Camera(this.htmlCanvas.width / this.htmlCanvas.height);
-                this.mainCam.Z = 100;
-
-                this.mainCam.rotX =  0.6600000000000001;
-                this.mainCam.rotY =  0.8500000000000001;
+                this.mainCam.Z = 10;
 
                 this.mainScene = new Scene();
 
                 var time1 = new Date();
 
                 var currentX:number = 0;
-                var currentZ:number = 0;
                 var currentY:number = 0;
-                
+                var currentZ:number = 0;
+
+                console.log("Number of cells to be instantiated:", NUMBER_OF_CELLS);
+
+                var cellsCount = 0;
                 for(var i = 0; i < NUMBER_OF_CELLS_ON_ROW; i++){
                     for(var j = 0; j < NUMBER_OF_CELLS_ON_ROW; j++){
-                        // for(var k = 0; k < NUMBER_OF_CELLS_ON_ROW; k++){
+                         for(var k = 0; k < NUMBER_OF_CELLS_ON_ROW; k++){
                             this.mainScene.add(new Cell({X:currentX, Y:currentY, Z:currentZ}, randomIntFromInterval(1, 9999)));
-                            // currentY += 2;
-                        // }
-                        currentX += 2;
-                        // currentY = 0;
+                            currentX += 2;
+                            cellsCount++;
+                         }
+                         currentY += 2;
+                         currentX = 0;
                     }
                     currentZ += 2;
-                    currentX = 0;
+                    currentY = 0;
                 }
-                // this.mainCam.lookAt = this.mainScene.getObjects()[0].Transform;
 
+                // this.mainCam.lookAt = this.mainScene.getObjects()[0].Transform;
+                console.log("Instanciated", cellsCount, "cells!");
                 //performance probe
                 var time2 = new Date();
                 var dtime = time2.getMilliseconds() - time1.getMilliseconds();
-                console.log("Cell init took: " + dtime.toString() + " ms\n");
+                console.log("Cell init took:", dtime, "ms\n");
                 //
                 this.mainRenderer.initCellsUniforms(this.mainScene, this.mainCam);
 
                 const doFrame = () => {
                     const now = Date.now() / 1000;
-                    // this.mainRenderer.initCellsUniforms(this.mainScene, this.mainCam);
 
                     this.mainRenderer.update(this.htmlCanvas);
                     this.mainRenderer.frame(this.mainCam, this.mainScene);
@@ -103,7 +105,20 @@ export class Engine{
                         this.mainCam.Z += wheelSpeed * 10;
                     }
                 }
-                
+
+                var shiftPressed:boolean = false;
+                window.onkeydown = (event: KeyboardEvent) =>{
+                    if(event.key == "Shift"){
+                        shiftPressed = true;
+                    }
+                }
+
+                window.onkeyup = (event: KeyboardEvent) =>{
+                    if(event.key == "Shift"){
+                        shiftPressed = false;
+                    }
+                }
+
                 // MOUSE DRAG
                 var mouseDown = false;
                 this.htmlCanvas.onmousedown = (event: MouseEvent) => {
@@ -126,14 +141,17 @@ export class Engine{
                     var mousey = event.pageY;
                 
                     if (lastMouseX > 0 && lastMouseY > 0) {
-                        const roty = mousex - lastMouseX;
-                        const rotx = mousey - lastMouseY;
-                
-                        this.mainCam.rotY += roty / 100;
-                        this.mainCam.rotX += rotx / 100;
-                        // console.log("CAMERA_X ", this.mainCam.rotX)
-                        // console.log("CAMERA_Y ", this.mainCam.rotY)
+                        const mouseDeltaX = mousex - lastMouseX;
+                        const mouseDeltaY = mousey - lastMouseY;
 
+                        if(!shiftPressed){
+                            this.mainCam.rotY += mouseDeltaX / 100;
+                            this.mainCam.rotX += mouseDeltaY / 100;
+                        }else{
+                            this.mainCam.X += mouseDeltaX / 100;
+                            this.mainCam.Y += mouseDeltaY / 100;
+                            // this.mainCam.lookAt = vec3.fromValues(this.mainCam.lookAt[0] + mouseDeltaX, this.mainCam.lookAt[1] - mouseDeltaY, this.mainCam.lookAt[2]);
+                        }
                     }
                 
                     lastMouseX = mousex;
