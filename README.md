@@ -23,7 +23,7 @@ V0.0.2<br>
 TO_DOs:
 * Add frame counter
 * Add menu for cell opacity controll
-* Add cube voxelisation for imported objects
+* Add cube voxelization for imported objects
 * Implement cell logic
 
 POSSILBE OPTIMISATIONS:<br>
