@@ -4,9 +4,9 @@ import { getCellVertexArray, loadCellVertexShader, loadCellFragmentShader } from
 export const CellRouter = Router();
 
 const CELL_FRAGMENT_SHADER_ENDPOINT = '/fragmentShader';
-const CELL_VERTEX_SHADER_ENDPOINT = '/vertexShader';
-const CELL_MESH_VERTEX_ARRAY = '/vertexArray';
-const CORS_HEADER = 'Access-Control-Allow-Origin';
+const CELL_VERTEX_SHADER_ENDPOINT   = '/vertexShader';
+const CELL_MESH_VERTEX_ARRAY        = '/vertexArray';
+const CORS_HEADER                   = 'Access-Control-Allow-Origin';
 
 CellRouter.get(CELL_VERTEX_SHADER_ENDPOINT,
     async (req: Request, res: Response, next: NextFunction) => {
