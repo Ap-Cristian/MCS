@@ -3,7 +3,8 @@ import { Camera } from './objects/camera/camera';
 import { CellRenderPipeline } from './objects/cell/cell.render.pipeline';
 import { CellShaderContainer } from './containers/cell-shader.container';
 import { NUMBER_OF_CELLS } from './engine';
-import { Mat4, mat4, vec3 } from 'wgpu-matrix';
+import { mat4 } from 'wgpu-matrix';
+import { SuzanneContainer } from './containers/suzanne.container';
 
 export var device: GPUDevice;
 export var cameraUniformBuffer: GPUBuffer;
@@ -34,27 +35,24 @@ export class WebGpuRenderer {
     private scaleArray              = new Float32Array(NUMBER_OF_CELLS * 3);
     private cameraProjectionArray   = new Float32Array(16);
 
-
-
-    private MVPMatrices:Float32Array = new Float32Array(NUMBER_OF_CELLS * 16);
-
     private verticesBuffer: GPUBuffer;
-
 
     private matrixSize = 4 * 16; // 4x4 matrix
     private cellShaderContainer:CellShaderContainer;
+    private suzanneContainer:SuzanneContainer;
+    
 
     private floatsPerVertex:number = (4 + 4 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
     private stride:number = this.floatsPerVertex * 4;  
-    private verteciesBuffer:GPUBuffer;
 
     private depthTexture:GPUTexture;
     private frameErrorProbed:boolean = false;
 
     private renderPassColorAttachment: GPURenderPassColorAttachment;
-    private currentGpuTexture: GPUTexture;
+
     constructor() {
         this.cellShaderContainer = CellShaderContainer.getInstance();
+        this.suzanneContainer = SuzanneContainer.getInstance();
     }
 
     public async init(canvas: HTMLCanvasElement): Promise<boolean> {
@@ -360,6 +358,7 @@ export class WebGpuRenderer {
     }
 
     private updateRenderPassDescriptor(canvas: HTMLCanvasElement) {
-        // (this.renderPassDescriptor.depthStencilAttachment as GPURenderPassDepthStencilAttachment).view = this.depthTextureView(canvas); REALLY BAD, UNCOMMENT AND MEMORY OVERFLOWS
+        //kkkkkkkkkkkkkk (this.renderPassDescriptor.depthStencilAttachment as GPURenderPassDepthStencilAttachment).view = this.depthTextureView(canvas); 
+        //REALLY BAD, UNCOMMENT AND MEMORY OVERFLOWS
     }
 }

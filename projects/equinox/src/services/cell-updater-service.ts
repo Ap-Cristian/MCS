@@ -1,3 +1,5 @@
+import { WS_MAIN_URL } from "../env";
+
 export class cellWatcherClient{
     private static ws:WebSocket;
 
@@ -13,7 +15,7 @@ export class cellWatcherClient{
     }
 
     public static initWebsocketClient(){
-        this.ws = new WebSocket("ws://localhost:3333");
+        this.ws = new WebSocket(WS_MAIN_URL);
 
         this.ws.addEventListener("open", this.onConnected);
         this.ws.addEventListener("close",this.onConnectionClosed);

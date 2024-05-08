@@ -26,16 +26,18 @@ export class Camera{
         let viewMatrix = mat4.create();
 
         mat4.lookAt(viewMatrix, vec3.fromValues(this.X, this.Y, this.Z), this.lookAt, vec3.fromValues(0, 1, 0));
-
         mat4.rotateX(viewMatrix, viewMatrix, this.rotX);
         mat4.rotateY(viewMatrix, viewMatrix, this.rotY);
         mat4.rotateZ(viewMatrix, viewMatrix, this.rotZ);
+
         return viewMatrix;
     }
 
     public getProjectionMatrix () : mat4 {
         let projectionMatrix = mat4.create();
+        
         mat4.perspective(projectionMatrix, this.fovy, this.aspect, this.near, this.far);
+        
         return projectionMatrix;
     }
 
@@ -43,7 +45,9 @@ export class Camera{
         const viewProjMatrix = mat4.create();
         const view = this.getViewMatrix();
         const proj = this.getProjectionMatrix();
+
         mat4.multiply(viewProjMatrix, proj, view);
+        
         return viewProjMatrix;
     }
 }

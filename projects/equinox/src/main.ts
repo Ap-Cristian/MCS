@@ -1,20 +1,30 @@
 import { CellShaderContainer } from "./containers/cell-shader.container";
-import { Engine } from "./engine";
+import { SuzanneContainer } from "./containers/suzanne.container";
 import { cellWatcherClient } from "./services/cell-updater-service";
+import { Engine } from "./engine";
+
 import "./style.scss";
 
-function initCellShaderResources(){
+async function initAppResources(){
+    var containerDataFetchPromises = [];
+
     var cellShaderContainer = CellShaderContainer.getInstance();
-    cellShaderContainer.fetchData().then(()=>{
+    var suzanneObjContainer = SuzanneContainer.getInstance();
+
+    containerDataFetchPromises.push(cellShaderContainer.fetchData());
+    containerDataFetchPromises.push(suzanneObjContainer.fetchData());
+
+    await Promise.all(containerDataFetchPromises).then(()=>{
         resumeAfterResourceLoad();
     });
 }
 
 function resumeAfterResourceLoad(){
-    var simEngine = new Engine();
+    var mcsEngine = new Engine();
 }
 
 export function main(){
-    initCellShaderResources();
+    initAppResources();
+
     cellWatcherClient.initWebsocketClient();
 }

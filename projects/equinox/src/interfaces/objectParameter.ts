@@ -1,4 +1,4 @@
-export interface CellParameter{
+export interface McsObjectParameter{
     X?: number;
     Y?: number;
     Z?: number;
@@ -10,4 +10,6 @@ export interface CellParameter{
     ScaleX?: number;
     ScaleY?: number;
     ScaleZ?: number;
+
+    type?: string;
 }
