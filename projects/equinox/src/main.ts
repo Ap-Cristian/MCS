@@ -1,13 +1,16 @@
 import { CellShaderContainer } from "./containers/cell-shader.container";
+import { SuzanneContainer } from "./containers/suzanne.container";
 import { Engine } from "./engine";
 import { cellWatcherClient } from "./services/cell-updater-service";
 import "./style.scss";
 
-function initCellShaderResources(){
+function initAppResources(){
     var cellShaderContainer = CellShaderContainer.getInstance();
-    cellShaderContainer.fetchData().then(()=>{
+    var suzanneShaderContainer = SuzanneContainer.getInstance();
+
+    Promise.all([cellShaderContainer.fetchData(), suzanneShaderContainer.fetchData()]).then(()=>{
         resumeAfterResourceLoad();
-    });
+    })
 }
 
 function resumeAfterResourceLoad(){
@@ -15,6 +18,6 @@ function resumeAfterResourceLoad(){
 }
 
 export function main(){
-    initCellShaderResources();
+    initAppResources();
     cellWatcherClient.initWebsocketClient();
 }

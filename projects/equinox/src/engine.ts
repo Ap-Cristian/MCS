@@ -3,9 +3,11 @@ import { randomIntFromInterval } from "./misc/math";
 import { Camera } from "./objects/camera/camera";
 import { Cell } from "./objects/cell/cell";
 import { Scene } from "./objects/scene/scene";
+import { Suzanne } from "./objects/suzanne/suzanne";
 import { WebGpuRenderer } from "./renderer";
 
-export const NUMBER_OF_CELLS_ON_ROW:number = 10;
+const CELLS_DEBUG = true;
+export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 20 : 0;
 export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW ** 3; 
 
 export class Engine{
@@ -50,7 +52,6 @@ export class Engine{
                 this.mainScene = new Scene();
 
                 var time1 = new Date();
-
                 var currentX:number = 0;
                 var currentY:number = 0;
                 var currentZ:number = 0;
@@ -61,7 +62,7 @@ export class Engine{
                 for(var i = 0; i < NUMBER_OF_CELLS_ON_ROW; i++){
                     for(var j = 0; j < NUMBER_OF_CELLS_ON_ROW; j++){
                          for(var k = 0; k < NUMBER_OF_CELLS_ON_ROW; k++){
-                            this.mainScene.add(new Cell({X:currentX, Y:currentY, Z:currentZ}, randomIntFromInterval(1, 9999)));
+                            this.mainScene.add(new Cell({X:currentX, Y:currentY, Z:currentZ}));
                             currentX += 2;
                             cellsCount++;
                          }
@@ -72,6 +73,8 @@ export class Engine{
                     currentY = 0;
                 }
 
+                this.mainScene.setSubject(new Suzanne({X:0, Y:-0, Z:-0, ScaleX:5,ScaleY:5,ScaleZ:5}));
+
                 // this.mainCam.lookAt = this.mainScene.getObjects()[0].Transform;
                 console.log("Instanciated", cellsCount, "cells!");
                 //performance probe
@@ -79,14 +82,12 @@ export class Engine{
                 var dtime = time2.getMilliseconds() - time1.getMilliseconds();
                 console.log("Cell init took:", dtime, "ms\n");
                 //
+                
                 this.mainRenderer.initCellsUniforms(this.mainScene, this.mainCam);
-
+                this.mainRenderer.initSuzanneUniforms(this.mainScene, this.mainCam);
                 const doFrame = () => {
-                    const now = Date.now() / 1000;
-
                     this.mainRenderer.update(this.htmlCanvas);
                     this.mainRenderer.frame(this.mainCam, this.mainScene);
-
                     requestAnimationFrame(doFrame);
                 };
                 //"That synchronization is taken care of by the requestAnimationFrame() method that is used to implement the animation."
@@ -153,11 +154,9 @@ export class Engine{
                             // this.mainCam.lookAt = vec3.fromValues(this.mainCam.lookAt[0] + mouseDeltaX, this.mainCam.lookAt[1] - mouseDeltaY, this.mainCam.lookAt[2]);
                         }
                     }
-                
                     lastMouseX = mousex;
                     lastMouseY = mousey;
                 }
-
             });
         }
     }
