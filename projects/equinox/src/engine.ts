@@ -83,8 +83,8 @@ export class Engine{
                 console.log("Cell init took:", dtime, "ms\n");
                 //
                 
-                this.mainRenderer.initCellsUniforms(this.mainScene, this.mainCam);
-                this.mainRenderer.initSuzanneUniforms(this.mainScene, this.mainCam);
+                this.mainRenderer.InitUBOs(this.mainScene, this.mainCam);
+                
                 const doFrame = () => {
                     this.mainRenderer.update(this.htmlCanvas);
                     this.mainRenderer.frame(this.mainCam, this.mainScene);

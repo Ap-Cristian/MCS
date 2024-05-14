@@ -1,31 +1,23 @@
+import { NUMBER_OF_CELLS } from './engine';
+
 import { Scene } from './objects/scene/scene';
 import { Camera } from './objects/camera/camera';
 import { CellRenderPipeline } from './objects/cell/cell.render.pipeline';
 import { CellShaderContainer } from './containers/cell-shader.container';
-import { SuzanneContainer } from './containers/suzanne.container';
-import { McsObject } from './objects/object';
 
-import { NUMBER_OF_CELLS } from './engine';
-import { SuzanneRenderPipeline } from './objects/suzanne/suzanne.render.pipeline';
-import { vec3 } from 'gl-matrix';
+import { McsObject } from './objects/object';
 import { FpsCounter } from './misc/fpsCounter/FPSCoutner';
 
 export var device: GPUDevice;
-export var cameraUniformBuffer: GPUBuffer;
-export var lightDataBuffer: GPUBuffer;
-export var lightDataSize = 3 * 4 + 4; // vec3 size in bytes
 
+var cameraUniformBuffer: GPUBuffer;
+var lightDataBuffer: GPUBuffer;
+
+const LIGHT_DATA_SIZE = 3 * 4 + 4; // vec3 size in bytes
 const FRAME_ERROR_PROBE_ONLY_ONCE:boolean = true;
 
-interface ISubject{
-    position: vec3,
-    scale: vec3,
-    rotation: vec3
-}
-
 export class WebGpuRenderer {
-    private Subject: ISubject;
-
+    private subject:McsObject;
     private isRendererInit:boolean = false;
     private initSuccess: boolean = false;
 
@@ -33,11 +25,11 @@ export class WebGpuRenderer {
     private cell_uniformBindGroup: GPUBindGroup;
     private suzanne_uniformBindGroup: GPUBindGroup;
 
-
     private context: GPUCanvasContext;
     private presentationFormat: GPUTextureFormat;
     
     private cell_renderPipeline:GPURenderPipeline;
+
     private cell_rotationBuffer:GPUBuffer;
     private cell_scaleBuffer:GPUBuffer;
     private cell_verticesBuffer: GPUBuffer;
@@ -46,29 +38,20 @@ export class WebGpuRenderer {
     private cell_positionArray           = new Float32Array(NUMBER_OF_CELLS * 3);
     private cell_rotationArray           = new Float32Array(NUMBER_OF_CELLS * 3);
     private cell_scaleArray              = new Float32Array(NUMBER_OF_CELLS * 3);
-
-    private suzanne_renderPipeline:GPURenderPipeline;
     
     private suzanne_positionUB:GPUBuffer;
     private suzanne_scaleUB:GPUBuffer;
     private suzanne_rotationUB:GPUBuffer;
 
-    private suzanne_positionArray         = new Float32Array(3 * Float32Array.BYTES_PER_ELEMENT);
-    private suzanne_rotationArray         = new Float32Array(3 * Float32Array.BYTES_PER_ELEMENT);
-    private suzanne_scaleArray            = new Float32Array(3 * Float32Array.BYTES_PER_ELEMENT);
-
-
-    private suzanne_indexData:Uint16Array;
+    private subject_indexData:Uint16Array;
     private suzanne_indexBuffer:GPUBuffer;
-    private suzanne_verticesBuffer: GPUBuffer;
-
+    private subject_verticesBuffer: GPUBuffer;
 
     private cameraProjectionBuffer:GPUBuffer;
     private cameraProjectionArray   = new Float32Array(16);
     
     private matrixSize = 4 * 16; // 4x4 matrix
     private cellShaderContainer:CellShaderContainer;
-    private suzanneContainer:SuzanneContainer;
     private floatsPerVertex:number = (4 + 4 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
     private stride:number = this.floatsPerVertex * 4;  
     private depthTexture:GPUTexture;
@@ -78,8 +61,6 @@ export class WebGpuRenderer {
 
     constructor() {
         this.cellShaderContainer = CellShaderContainer.getInstance();
-        this.suzanneContainer = SuzanneContainer.getInstance();
-        this.suzanne_indexData = new Uint16Array(this.suzanneContainer.faces.length * 3 * Uint16Array.BYTES_PER_ELEMENT);
     }
 
     public async init(canvas: HTMLCanvasElement): Promise<boolean> {
@@ -132,7 +113,6 @@ export class WebGpuRenderer {
           };
 
         this.cell_renderPipeline = CellRenderPipeline.GetInstance().Pipeline;
-        this.suzanne_renderPipeline = SuzanneRenderPipeline.GetInstance().Pipeline;
 
         cameraUniformBuffer = device.createBuffer({
             size: this.matrixSize,
@@ -140,14 +120,22 @@ export class WebGpuRenderer {
         });
 
         lightDataBuffer = device.createBuffer({
-            size: lightDataSize,
+            size: LIGHT_DATA_SIZE,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         this.isRendererInit = true;
         return this.initSuccess = true;
     }
 
-    public initCellsUniforms(scene:Scene, camera:Camera){
+    public InitUBOs(scene:Scene, camera:Camera){
+        this.initCellsUniforms(scene, camera);
+        this.initSubjectUniforms(scene, camera);
+    }
+
+
+
+
+    private initCellsUniforms(scene:Scene, camera:Camera){
         if(!this.frameErrorProbed){
             device.pushErrorScope("validation")
             device.pushErrorScope("out-of-memory")
@@ -159,7 +147,6 @@ export class WebGpuRenderer {
 
         var currentMemOffset = 0;
         for(let i = 0; i < NUMBER_OF_CELLS; i++){
-
             this.cell_positionArray[currentMemOffset] = objects[i].X;
             this.cell_rotationArray[currentMemOffset] = objects[i].RotationX;
             this.cell_scaleArray[currentMemOffset]    = objects[i].ScaleX;
@@ -192,19 +179,22 @@ export class WebGpuRenderer {
         // var uniformBindingsCount = 1024 > 4 * 16 * NUMBER_OF_CELLS ? 1024 : 4 * 16 * NUMBER_OF_CELLS
 
         this.cell_positionBuffer = device.createBuffer({
-            size: 4 * 3 * NUMBER_OF_CELLS < 16 ? 16 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            size: Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS < 16 ? 
+                    16 : Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
         this.cell_scaleBuffer = device.createBuffer({
-            size:  4 * 3 * NUMBER_OF_CELLS < 16 ? 16 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            size:  Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS < 16 ? 
+                    16 : Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
         this.cell_rotationBuffer = device.createBuffer({
-            size:  4 * 3 * NUMBER_OF_CELLS < 16 ? 16 : 4 * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            size:  Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS < 16 
+                    ? 16 : Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
         this.cameraProjectionBuffer = device.createBuffer({
-            size: 16 * 4, // MEM SIZE EXCEDED
+            size: 16 * Float32Array.BYTES_PER_ELEMENT, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
 
@@ -276,48 +266,28 @@ export class WebGpuRenderer {
         }
     }
 
-    public initSuzanneUniforms(scene: Scene, camera: Camera,){
+    private initSubjectUniforms(scene: Scene, camera: Camera,){
         if(!this.frameErrorProbed){
             device.pushErrorScope("validation")
             device.pushErrorScope("out-of-memory")
             device.pushErrorScope("internal")
         }
 
-        var subject = scene.getSubject();
-
-        const suzanne:ISubject = {
-            position: vec3.fromValues(subject.X, subject.Y, subject.Z),
-            scale: vec3.fromValues(subject.ScaleX, subject.ScaleY, subject.ScaleZ),
-            rotation: vec3.fromValues(subject.RotationX, subject.RotationY, subject.RotationZ)
-        }
-
-        this.Subject = suzanne;
-
-        this.suzanne_positionArray[0] = this.Subject.position[0];
-        this.suzanne_positionArray[1] = this.Subject.position[1];
-        this.suzanne_positionArray[2] = this.Subject.position[2];
-                
-        this.suzanne_scaleArray[0]    = this.Subject.scale[0];
-        this.suzanne_scaleArray[1]    = this.Subject.scale[1];
-        this.suzanne_scaleArray[2]    = this.Subject.scale[2];
-
-        this.suzanne_rotationArray[0] = this.Subject.rotation[0];
-        this.suzanne_rotationArray[1] = this.Subject.rotation[1];
-        this.suzanne_rotationArray[2] = this.Subject.rotation[2];
-
+        this.subject = scene.getSubject();
+        this.subject_indexData = new Uint16Array(this.subject.FacesArray.length * 3 * Uint16Array.BYTES_PER_ELEMENT);
 
         this.suzanne_positionUB = device.createBuffer({
-            size: this.suzanne_positionArray.length * Float32Array.BYTES_PER_ELEMENT,
+            size: this.subject.GPUPosArray.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         })
 
         this.suzanne_rotationUB = device.createBuffer({
-            size: this.suzanne_rotationArray.length * Float32Array.BYTES_PER_ELEMENT,
+            size: this.subject.GPURotArray.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         })
         
         this.suzanne_scaleUB = device.createBuffer({
-            size: this.suzanne_scaleArray.length * Float32Array.BYTES_PER_ELEMENT,
+            size: this.subject.GPUScaleArray.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         })
         var uniformBindGroupEntries:Iterable<GPUBindGroupEntry> = [
@@ -348,44 +318,44 @@ export class WebGpuRenderer {
         ];
 
         this.suzanne_uniformBindGroup = device.createBindGroup({
-            layout: this.suzanne_renderPipeline.getBindGroupLayout(0),
+            layout: this.subject.RenderPipeline.getBindGroupLayout(0),
             entries: uniformBindGroupEntries
         });
-        this.suzanne_verticesBuffer = device.createBuffer({
-            size: this.suzanneContainer.vertecies.length * this.stride,
+        this.subject_verticesBuffer = device.createBuffer({
+            size: this.subject.VertexArray.length * this.stride,
             usage: GPUBufferUsage.VERTEX,
             mappedAtCreation: true,
         });
 
         // console.log("VERTERX COUNT:" + this.cellShaderContainer.vertexArray.length)
 
-        const mapping = new Float32Array(this.suzanne_verticesBuffer.getMappedRange());
+        const mapping = new Float32Array(this.subject_verticesBuffer.getMappedRange());
         var vertexByteOffset = 0;
-        for (let i = 0; i < this.suzanneContainer.vertecies.length; i++) {
-            var vert_X = this.suzanneContainer.vertecies[i].pos[0];
-            var vert_Y = this.suzanneContainer.vertecies[i].pos[1];
-            var vert_Z = this.suzanneContainer.vertecies[i].pos[2];
+        for (let i = 0; i < this.subject.VertexArray.length; i++) {
+            var vert_X = this.subject.VertexArray[i].pos[0];
+            var vert_Y = this.subject.VertexArray[i].pos[1];
+            var vert_Z = this.subject.VertexArray[i].pos[2];
 
             mapping.set([vert_X, vert_Y, vert_Z, 1], vertexByteOffset);
             vertexByteOffset += 4;
             
-            this.suzanneContainer.vertecies[i].norm.push(1)
-            mapping.set(this.suzanneContainer.vertecies[i].norm, vertexByteOffset);
+            this.subject.VertexArray[i].norm.push(1)
+            mapping.set(this.subject.VertexArray[i].norm, vertexByteOffset);
 
             vertexByteOffset += 4;
         }
-        this.suzanne_verticesBuffer.unmap();
+        this.subject_verticesBuffer.unmap();
         // this.renderPassColorAttachment = (this.renderPassDescriptor.colorAttachments as [GPURenderPassColorAttachment])[0];
 
         var idx = 0
-        for(var i = 0; i < this.suzanneContainer.faces.length; i++){
-            this.suzanne_indexData[idx++] = this.suzanneContainer.faces[i].indexes[0];
-            this.suzanne_indexData[idx++] = this.suzanneContainer.faces[i].indexes[1]; 
-            this.suzanne_indexData[idx++] = this.suzanneContainer.faces[i].indexes[2]; 
+        for(var i = 0; i < this.subject.FacesArray.length; i++){
+            this.subject_indexData[idx++] = this.subject.FacesArray[i].indexes[0];
+            this.subject_indexData[idx++] = this.subject.FacesArray[i].indexes[1]; 
+            this.subject_indexData[idx++] = this.subject.FacesArray[i].indexes[2]; 
         }
 
         this.suzanne_indexBuffer = device.createBuffer({
-            size: this.suzanne_indexData.length * Float32Array.BYTES_PER_ELEMENT,
+            size: this.subject_indexData.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.INDEX
         });
 
@@ -434,7 +404,9 @@ export class WebGpuRenderer {
             console.error("[ERR] Failed to init renderer!\n Check 'Update' function");
             return;
         }
-        this.suzanne_rotationArray[1] += 0.01;
+        this.subject.RotationY += 0.01;
+        this.subject.RotationZ += 0.01;
+
         this.updateRenderPassDescriptor(canvas);
     }
 
@@ -484,23 +456,23 @@ export class WebGpuRenderer {
         device.queue.writeBuffer(
             this.suzanne_positionUB,
             0,
-            this.suzanne_positionArray.buffer,
-            this.suzanne_positionArray.byteOffset,
-            this.suzanne_positionArray.byteLength 
+            this.subject.GPUPosArray.buffer,
+            this.subject.GPUPosArray.byteOffset,
+            this.subject.GPUPosArray.byteLength 
         );
         device.queue.writeBuffer(
             this.suzanne_rotationUB,
             0,
-            this.suzanne_rotationArray.buffer,
-            this.suzanne_rotationArray.byteOffset,
-            this.suzanne_rotationArray.byteLength 
+            this.subject.GPURotArray.buffer,
+            this.subject.GPURotArray.byteOffset,
+            this.subject.GPURotArray.byteLength 
         );
         device.queue.writeBuffer(
             this.suzanne_scaleUB,
             0,
-            this.suzanne_scaleArray.buffer,
-            this.suzanne_scaleArray.byteOffset,
-            this.suzanne_scaleArray.byteLength 
+            this.subject.GPUScaleArray.buffer,
+            this.subject.GPUScaleArray.byteOffset,
+            this.subject.GPUScaleArray.byteLength 
         );
 //
 
@@ -515,18 +487,18 @@ export class WebGpuRenderer {
         device.queue.writeBuffer(
             this.suzanne_indexBuffer,
             0,
-            this.suzanne_indexData.buffer,
-            this.suzanne_indexData.byteOffset,
-            this.suzanne_indexData.byteLength,
+            this.subject_indexData.buffer,
+            this.subject_indexData.byteOffset,
+            this.subject_indexData.byteLength,
         )
 
         // console.log(this.suzanne_indexData);
 
-        passEncoder.setVertexBuffer(0, this.suzanne_verticesBuffer);
-        passEncoder.setPipeline(this.suzanne_renderPipeline);
+        passEncoder.setVertexBuffer(0, this.subject_verticesBuffer);
+        passEncoder.setPipeline(this.subject.RenderPipeline);
         passEncoder.setBindGroup(0, this.suzanne_uniformBindGroup);
         passEncoder.setIndexBuffer(this.suzanne_indexBuffer, "uint16");
-        passEncoder.drawIndexed(this.suzanne_indexData.length, 1, 0, 0, 0);
+        passEncoder.drawIndexed(this.subject_indexData.length, 1, 0, 0, 0);
     }
 
     public frame(camera: Camera, scene: Scene) {

@@ -1,10 +1,10 @@
-import { vertexParameters } from "../misc/vertexParameters";
 import { CellShaderService } from "../services/cell-shader-service";
+import { IVertex } from "./interfaces/IVertex";
 
 export class CellShaderContainer{
     public vertexCode:string;
     public fragmentCode:string;
-    public vertexArray:vertexParameters[]; //object is a placeholder for vertex interface
+    public vertexArray:IVertex[]; //object is a placeholder for vertex interface
 
     private static instance:CellShaderContainer;
 

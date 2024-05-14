@@ -5,6 +5,7 @@ export class SuzanneRenderPipeline{
     private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv, 3 for color
     private stride:number = this.perVertex * 4; //4 bytes
     private suzanneShaderContainer = SuzanneContainer.getInstance();
+    
     public Pipeline:GPURenderPipeline;
 
     private constructor(){
@@ -16,13 +17,13 @@ export class SuzanneRenderPipeline{
             var fragmentCompilationInfo = fragmentShaderModule.getCompilationInfo();
 
             vertexCompilationInfo.then((info)=>{
-                console.log("Vertex shader compilation complaints should appear after this ------")
+                console.log("Suzanne vertex shader compilation complaints should appear after this ------")
                 info.messages.forEach((message)=>{
                   console.error(message);
                 })
             });
             fragmentCompilationInfo.then((info)=>{
-                console.log("Fragment shader compilation complaints should appear after this ------")
+                console.log("Suzanne fragment shader compilation complaints should appear after this ------")
                 info.messages.forEach((message)=>{
                   console.error(message);
                 })
