@@ -2,6 +2,7 @@ import { NUMBER_OF_CELLS } from './engine';
 
 import { Scene } from './objects/scene/scene';
 import { Camera } from './objects/camera/camera';
+
 import { CellRenderPipeline } from './objects/cell/cell.render.pipeline';
 import { CellShaderContainer } from './containers/cell-shader.container';
 
@@ -10,57 +11,47 @@ import { FpsCounter } from './misc/fpsCounter/FPSCoutner';
 
 export var device: GPUDevice;
 
-var cameraUniformBuffer: GPUBuffer;
-var lightDataBuffer: GPUBuffer;
-
-const LIGHT_DATA_SIZE = 3 * 4 + 4; // vec3 size in bytes
 const FRAME_ERROR_PROBE_ONLY_ONCE:boolean = true;
 
 export class WebGpuRenderer {
-    private subject:McsObject;
-    private isRendererInit:boolean = false;
-    private initSuccess: boolean = false;
+    private initSuccess:                boolean = false;
 
-    private renderPassDescriptor: GPURenderPassDescriptor;
-    private cell_uniformBindGroup: GPUBindGroup;
-    private suzanne_uniformBindGroup: GPUBindGroup;
+    private renderPassDescriptor:       GPURenderPassDescriptor;
+    private presentationFormat:         GPUTextureFormat;
+    private context:                    GPUCanvasContext;
 
-    private context: GPUCanvasContext;
-    private presentationFormat: GPUTextureFormat;
-    
-    private cell_renderPipeline:GPURenderPipeline;
+    private cell_positionArray:         Float32Array;
+    private cell_rotationArray:         Float32Array;
+    private cell_scaleArray:            Float32Array;
+    private cell_renderPipeline:        GPURenderPipeline;
+    private cell_rotationBuffer:        GPUBuffer;
+    private cell_scaleBuffer:           GPUBuffer;
+    private cell_verticesBuffer:        GPUBuffer;
+    private cell_positionBuffer:        GPUBuffer;
+    private cell_uniformBindGroup:      GPUBindGroup;
+    private cell_shaderContainer:       CellShaderContainer;
 
-    private cell_rotationBuffer:GPUBuffer;
-    private cell_scaleBuffer:GPUBuffer;
-    private cell_verticesBuffer: GPUBuffer;
-    private cell_positionBuffer:GPUBuffer;
+    private suzanne_positionUB:         GPUBuffer;
+    private suzanne_scaleUB:            GPUBuffer;
+    private suzanne_rotationUB:         GPUBuffer;
+    private subject_indexData:          Uint16Array;
+    private suzanne_indexBuffer:        GPUBuffer;
+    private subject_verticesBuffer:     GPUBuffer;
+    private suzanne_uniformBindGroup:   GPUBindGroup;
+    private subject:                    McsObject;
 
-    private cell_positionArray           = new Float32Array(NUMBER_OF_CELLS * 3);
-    private cell_rotationArray           = new Float32Array(NUMBER_OF_CELLS * 3);
-    private cell_scaleArray              = new Float32Array(NUMBER_OF_CELLS * 3);
-    
-    private suzanne_positionUB:GPUBuffer;
-    private suzanne_scaleUB:GPUBuffer;
-    private suzanne_rotationUB:GPUBuffer;
-
-    private subject_indexData:Uint16Array;
-    private suzanne_indexBuffer:GPUBuffer;
-    private subject_verticesBuffer: GPUBuffer;
-
-    private cameraProjectionBuffer:GPUBuffer;
+    private cameraProjectionBuffer:     GPUBuffer;
     private cameraProjectionArray   = new Float32Array(16);
     
-    private matrixSize = 4 * 16; // 4x4 matrix
-    private cellShaderContainer:CellShaderContainer;
-    private floatsPerVertex:number = (4 + 4 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
-    private stride:number = this.floatsPerVertex * 4;  
-    private depthTexture:GPUTexture;
+    private readonly floatsPerVertex:number = (4 + 4 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
+    private readonly stride:number = this.floatsPerVertex * 4;  
+    
     private frameErrorProbed:boolean = false;
     private renderPassColorAttachment: GPURenderPassColorAttachment;
     private fpsCounter:FpsCounter = new FpsCounter();
 
     constructor() {
-        this.cellShaderContainer = CellShaderContainer.getInstance();
+        this.cell_shaderContainer = CellShaderContainer.getInstance();
     }
 
     public async init(canvas: HTMLCanvasElement): Promise<boolean> {
@@ -85,11 +76,6 @@ export class WebGpuRenderer {
             alphaMode: 'premultiplied',
         });
 
-        this.depthTexture = device.createTexture({
-            size: [canvas.width, canvas.height],
-            format: 'depth24plus',
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-          });
 
         this.renderPassDescriptor = {
             colorAttachments: [
@@ -113,18 +99,9 @@ export class WebGpuRenderer {
           };
 
         this.cell_renderPipeline = CellRenderPipeline.GetInstance().Pipeline;
+        this.initSuccess = true;
 
-        cameraUniformBuffer = device.createBuffer({
-            size: this.matrixSize,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-
-        lightDataBuffer = device.createBuffer({
-            size: LIGHT_DATA_SIZE,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-        this.isRendererInit = true;
-        return this.initSuccess = true;
+        return this.initSuccess;
     }
 
     public InitUBOs(scene:Scene, camera:Camera){
@@ -143,7 +120,9 @@ export class WebGpuRenderer {
         }
 
         var objects = scene.getObjects();
-        var currentMatStep = 0;
+        this.cell_positionArray = new Float32Array(NUMBER_OF_CELLS * 3);
+        this.cell_rotationArray = new Float32Array(NUMBER_OF_CELLS * 3);
+        this.cell_scaleArray = new Float32Array(NUMBER_OF_CELLS * 3);
 
         var currentMemOffset = 0;
         for(let i = 0; i < NUMBER_OF_CELLS; i++){
@@ -163,7 +142,6 @@ export class WebGpuRenderer {
             currentMemOffset++;
         }
 
-        currentMatStep = 0;
 
         //Model view projection matrix
         // for(let i = 0; i < NUMBER_OF_CELLS; i++){
@@ -224,7 +202,7 @@ export class WebGpuRenderer {
             entries: uniformBindGroupEntries
         });
         this.cell_verticesBuffer = device.createBuffer({
-            size: this.cellShaderContainer.vertexArray.length * this.stride, //wierd shit happening here
+            size: this.cell_shaderContainer.vertexArray.length * this.stride, //wierd shit happening here
             usage: GPUBufferUsage.VERTEX,
             mappedAtCreation: true,
         });
@@ -233,16 +211,16 @@ export class WebGpuRenderer {
 
         const mapping = new Float32Array(this.cell_verticesBuffer.getMappedRange());
         var vertexByteOffset = 0;
-        for (let i = 0; i < this.cellShaderContainer.vertexArray.length; i++) {
-            var vert_X = this.cellShaderContainer.vertexArray[i].pos[0];
-            var vert_Y = this.cellShaderContainer.vertexArray[i].pos[1];
-            var vert_Z = this.cellShaderContainer.vertexArray[i].pos[2];
+        for (let i = 0; i < this.cell_shaderContainer.vertexArray.length; i++) {
+            var vert_X = this.cell_shaderContainer.vertexArray[i].pos[0];
+            var vert_Y = this.cell_shaderContainer.vertexArray[i].pos[1];
+            var vert_Z = this.cell_shaderContainer.vertexArray[i].pos[2];
 
             mapping.set([vert_X, vert_Y, vert_Z, 1], vertexByteOffset);
             vertexByteOffset += 4;
             
-            this.cellShaderContainer.vertexArray[i].norm.push(1)
-            mapping.set(this.cellShaderContainer.vertexArray[i].norm, vertexByteOffset);
+            this.cell_shaderContainer.vertexArray[i].norm.push(1)
+            mapping.set(this.cell_shaderContainer.vertexArray[i].norm, vertexByteOffset);
             vertexByteOffset += 4;
         }
         this.cell_verticesBuffer.unmap();
@@ -447,7 +425,7 @@ export class WebGpuRenderer {
         passEncoder.setVertexBuffer(0, this.cell_verticesBuffer);
         passEncoder.setPipeline(this.cell_renderPipeline);
         passEncoder.setBindGroup(0, this.cell_uniformBindGroup);
-        passEncoder.draw(this.cellShaderContainer.vertexArray.length, NUMBER_OF_CELLS, 0, 0);
+        passEncoder.draw(this.cell_shaderContainer.vertexArray.length, NUMBER_OF_CELLS, 0, 0);
     }
 
     private suzanneFrame(passEncoder:GPURenderPassEncoder): void{

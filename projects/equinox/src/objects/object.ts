@@ -6,6 +6,7 @@ import { IVertex } from "../containers/interfaces/IVertex";
 import { SuzanneContainer } from "../containers/suzanne.container";
 import { CellShaderContainer } from "../containers/cell-shader.container";
 import { IFace } from "../containers/interfaces/IFace";
+import { BoundingBox } from "./gizmos/boundingBox";
 
 export class McsObject{
     //human readable form
@@ -32,10 +33,12 @@ export class McsObject{
     public FacesArray: IFace[];
     //object render stuff
     private renderPipeline:GPURenderPipeline;
+    private boundingBox:BoundingBox;
     //
 
     constructor(objType:string, parameter?: McsObjectParameters) {
         this.setTransformation(parameter);
+        this.boundingBox = new BoundingBox(this);
         this.type = objType;
         switch(this.type){
             case 'suzanne':

@@ -6,7 +6,7 @@ import { Scene } from "./objects/scene/scene";
 import { Suzanne } from "./objects/suzanne/suzanne";
 import { WebGpuRenderer } from "./renderer";
 
-const CELLS_DEBUG = true;
+const CELLS_DEBUG = false;
 export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 20 : 0;
 export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW ** 3; 
 
