@@ -10,7 +10,7 @@ export class FpsCounter{
         this.Fps = 0;
         this.SkipFrame = false;
     }
-    public update(){
+    public frame(){
         if(this.SkipFrame == true){
             console.log("[FPSCounter] Update called before start!")
             return;

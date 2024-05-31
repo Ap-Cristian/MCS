@@ -6,9 +6,8 @@ import { IVertex } from "../containers/interfaces/IVertex";
 import { SuzanneContainer } from "../containers/suzanne.container";
 import { CellShaderContainer } from "../containers/cell-shader.container";
 import { IFace } from "../containers/interfaces/IFace";
-import { BoundingBox } from "./gizmos/boundingBox";
 
-export class McsObject{
+export abstract class McsObject{
     //human readable form
     private x: number = 0;
     private y: number = 0;
@@ -29,30 +28,33 @@ export class McsObject{
     private RotArray32f: Float32Array = new Float32Array(3);
     private ScaleArray32f: Float32Array = new Float32Array(3);
 
-    public VertexArray: IVertex[];
-    public FacesArray: IFace[];
+
     //object render stuff
-    private renderPipeline:GPURenderPipeline;
-    private boundingBox:BoundingBox;
+    protected renderPipeline:GPURenderPipeline;
+    protected vertexArray: IVertex[];
+    protected facesArray: IFace[];
     //
+
+    abstract attachRenderObjects():void;
 
     constructor(objType:string, parameter?: McsObjectParameters) {
         this.setTransformation(parameter);
-        this.boundingBox = new BoundingBox(this);
         this.type = objType;
-        switch(this.type){
-            case 'suzanne':
-                this.renderPipeline = SuzanneRenderPipeline.GetInstance().Pipeline;
-                this.VertexArray = SuzanneContainer.getInstance().vertecies;
-                this.FacesArray = SuzanneContainer.getInstance().faces;
-                break;
-            case 'cell':
-                this.renderPipeline = CellRenderPipeline.GetInstance().Pipeline;
-                this.VertexArray = CellShaderContainer.getInstance().vertexArray;
-                break;
-            default:
-                break;
-        }
+        // switch(this.type){
+        //     case 'suzanne':
+        //         this.renderPipeline = SuzanneRenderPipeline.GetInstance().Pipeline;
+        //         this.vertexArray = SuzanneContainer.getInstance().vertecies;
+        //         this.facesArray = SuzanneContainer.getInstance().faces;
+        //         break;
+        //     case 'cell':
+        //         this.renderPipeline = CellRenderPipeline.GetInstance().Pipeline;
+        //         this.vertexArray = CellShaderContainer.getInstance().vertexArray;
+        //         break;
+        //     default:
+        //         break;
+        // }
+
+        this.attachRenderObjects();
     }
 
     public get Parameters():McsObjectParameters{
@@ -83,6 +85,13 @@ export class McsObject{
     public get GPUScaleArray(): Float32Array{
         return this.ScaleArray32f;
     }
+    public get FacesArray():IFace[]{
+        return this.facesArray;
+    }
+    public get VertexArray():IVertex[]{
+        return this.vertexArray;
+    }
+
 
     public get RotationX(){
         return this.rotationX;

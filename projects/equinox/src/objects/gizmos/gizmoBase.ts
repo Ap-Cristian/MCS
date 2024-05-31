@@ -14,8 +14,6 @@ export class Gizmo {
     private scaleY:number;
     private scaleZ:number;
 
-    private color:Color = new Color(255,255,255);
-
     public get X():number{
         return this.X;
     }
@@ -33,9 +31,6 @@ export class Gizmo {
     }
     public get ScaleZ():number{
         return this.ScaleZ;
-    }
-    public get Color():Color{
-        return this.color;
     }
     
     public set X(value:number){
@@ -56,12 +51,14 @@ export class Gizmo {
     public set ScaleZ(value:number){
         this.ScaleZ = value;
     }
-    public set Color(value:Color){
-        this.color = value;
-    }
 
     constructor(params:IGizmo){
         params.parent ? this.parentObject = params.parent : this.parentObject = null;
-        params.color ? this.color = params.color : this.color = null;
+        
+        if(params && params.parent){
+            this.X = params.parent.X;
+            this.Y = params.parent.Y;
+            this.Z = params.parent.Z;
+        }
     }
 }

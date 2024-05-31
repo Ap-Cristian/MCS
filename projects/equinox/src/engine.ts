@@ -1,5 +1,3 @@
-import { vec3 } from "gl-matrix";
-import { randomIntFromInterval } from "./misc/math";
 import { Camera } from "./objects/camera/camera";
 import { Cell } from "./objects/cell/cell";
 import { Scene } from "./objects/scene/scene";
@@ -24,7 +22,10 @@ export class Engine{
             this.htmlCanvas.height = window.innerHeight;
             
             this.mainCam.aspect = this.htmlCanvas.width / this.htmlCanvas.height;
-            this.mainRenderer.update(this.htmlCanvas);
+            this.mainRenderer.updateMain(this.htmlCanvas);
+            if(this.mainRenderer){
+                this.mainRenderer.UpdateRenderPassDescriptor(this.htmlCanvas);
+            }
         }
     }
 
@@ -86,8 +87,8 @@ export class Engine{
                 this.mainRenderer.InitUBOs(this.mainScene, this.mainCam);
                 
                 const doFrame = () => {
-                    this.mainRenderer.update(this.htmlCanvas);
-                    this.mainRenderer.frame(this.mainCam, this.mainScene);
+                    this.mainRenderer.updateMain(this.htmlCanvas);
+                    this.mainRenderer.frameMain(this.mainCam, this.mainScene);
                     requestAnimationFrame(doFrame);
                 };
                 //"That synchronization is taken care of by the requestAnimationFrame() method that is used to implement the animation."
