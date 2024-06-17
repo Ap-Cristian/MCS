@@ -3,6 +3,7 @@ import { Camera } from './objects/camera/camera';
 import { FpsCounter } from './misc/fpsCounter/FPSCoutner';
 import { CellRenderer } from './renderers/cellRenderer';
 import { SuzanneRenderer } from './renderers/suzanneRenderer';
+import { VoxelRenderer } from './renderers/voxelRenderer';
 
 export var device: GPUDevice;
 
@@ -17,6 +18,7 @@ export class WebGpuRenderer {
 
     private cellRndr:CellRenderer;
     private suzanneRndr:SuzanneRenderer;
+    private voxelRenderer:VoxelRenderer;
     
     private cameraProjectionArray   = new Float32Array(16);
     
@@ -81,9 +83,14 @@ export class WebGpuRenderer {
 
     public InitUBOs(scene:Scene, camera:Camera){
         this.renderPassColorAttachment = (this.renderPassDescriptor.colorAttachments as [GPURenderPassColorAttachment])[0];
+        //temporary
+        this.voxelRenderer = new VoxelRenderer(scene.getSubject());
 
         this.cellRndr.initUniforms(scene, camera);
         this.suzanneRndr.initUniforms(scene, camera);
+        // this.voxelRenderer.initUniforms(scene, camera);
+        // this.voxelRenderer.CameraProjectionBuffer
+
     }
 
     public updateMain(canvas: HTMLCanvasElement) {

@@ -13,13 +13,15 @@ export class SuzanneRenderer extends Renderer{
     private subject_verticesBuffer:     GPUBuffer;
     private suzanne_uniformBindGroup:   GPUBindGroup;
     private subject:                    McsObject;
-    private subject_verteciesAfterTR:   GPUBuffer;
 
     private frameErrorProbed:boolean = false;    
 
-
     constructor(){
         super();
+    }
+
+    public get Subject():McsObject{
+        return this.subject;
     }
     
     initUniforms(scene: Scene, camera: Camera): void {
@@ -44,10 +46,12 @@ export class SuzanneRenderer extends Renderer{
             size: this.subject.GPUScaleArray.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         })
-        this.cameraProjectionBuffer = device.createBuffer({
-            size: 16 * Float32Array.BYTES_PER_ELEMENT, // MEM SIZE EXCEDED
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        })
+
+        // !
+        // this.cameraProjectionBuffer = device.createBuffer({
+        //     size: 16 * Float32Array.BYTES_PER_ELEMENT,
+        //     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        // })
         
         var uniformBindGroupEntries:Iterable<GPUBindGroupEntry> = [
             {
@@ -154,7 +158,6 @@ export class SuzanneRenderer extends Renderer{
             this.subject.GPUScaleArray.byteOffset,
             this.subject.GPUScaleArray.byteLength 
         );
-//
 
         device.queue.writeBuffer(
             this.cameraProjectionBuffer,  //write to transformation buffer which is then used into the transformation bind group trough the entries var on line 98 
@@ -180,5 +183,4 @@ export class SuzanneRenderer extends Renderer{
         passEncoder.setIndexBuffer(this.suzanne_indexBuffer, "uint16");
         passEncoder.drawIndexed(this.subject_indexData.length, 1, 0, 0, 0);
     }
-
 }

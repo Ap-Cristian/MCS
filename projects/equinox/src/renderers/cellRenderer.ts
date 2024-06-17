@@ -57,15 +57,6 @@ export class CellRenderer extends Renderer{
             currentMemOffset++;
         }
 
-
-        //Model view projection matrix
-        // for(let i = 0; i < NUMBER_OF_CELLS; i++){
-        //     mat4.multiply(camera.getCameraViewProjMatrix(), cellsModelsTranformationMatrixes[i], projectionAppliedResultMat);
-        //     this.MVPMatrices.set(projectionAppliedResultMat, currentMatStep);
-        //     currentMatStep += 4*4;
-        // }
-        //
-
         console.log("DEV_VIDEO_MAX_BUFFER_MEM_SIZE: ", device.limits.maxBufferSize)
         console.log("DEV_VIDEO_MAX_UNIFORM_MEM_SIZE: ", device.limits.maxUniformBufferBindingSize)
 
@@ -86,15 +77,17 @@ export class CellRenderer extends Renderer{
                     ? 16 : Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
-        this.cameraProjectionBuffer = device.createBuffer({
-            size: 16 * Float32Array.BYTES_PER_ELEMENT, // MEM SIZE EXCEDED
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        })
+
+        // !
+        // this.cameraProjectionBuffer = device.createBuffer({
+        //     size: 16 * Float32Array.BYTES_PER_ELEMENT,
+        //     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        // });
 
         var uniformBindGroupEntries:Iterable<GPUBindGroupEntry> = [
             {
                 binding: 0,      
-                resource: {
+                resource: {                         //rotation
                   buffer: this.cell_rotationBuffer,
                 }
             },
@@ -106,7 +99,7 @@ export class CellRenderer extends Renderer{
             },
             {
                 binding: 2,
-                resource: {                         //position
+                resource: {                         //camera
                   buffer: this.cameraProjectionBuffer,
                 }
             }
