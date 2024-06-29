@@ -5,7 +5,7 @@ import { Suzanne } from "./objects/suzanne/suzanne";
 import { WebGpuRenderer } from "./renderer";
 
 const CELLS_DEBUG = false;
-export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 150 : 0;
+export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 10 : 0;
 export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW ** 3; 
 
 export class Engine{
@@ -74,7 +74,7 @@ export class Engine{
                     currentY = 0;
                 }
 
-                this.mainScene.setSubject(new Suzanne({X:0, Y:-0, Z:-0, ScaleX:5,ScaleY:5,ScaleZ:5}));
+                this.mainScene.setSubject(new Suzanne({X:0, Y:0, Z:0}));
 
                 // this.mainCam.lookAt = this.mainScene.getObjects()[0].Transform;
                 console.log("Instanciated", cellsCount, "cells!");
@@ -132,8 +132,8 @@ export class Engine{
                 this.htmlCanvas.onmouseup = (event: MouseEvent) => {
                     mouseDown = false;
                 }
-                var lastMouseX=-1; 
-                var lastMouseY=-1;
+                var lastMouseX= -1; 
+                var lastMouseY= -1;
                 this.htmlCanvas.onmousemove = (event: MouseEvent) => {
                     if (!mouseDown) {
                         return;

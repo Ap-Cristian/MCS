@@ -4,6 +4,8 @@ import { FpsCounter } from './misc/fpsCounter/FPSCoutner';
 import { CellRenderer } from './renderers/cellRenderer';
 import { SuzanneRenderer } from './renderers/suzanneRenderer';
 import { VoxelRenderer } from './renderers/voxelRenderer';
+import { BoundingBoxRenderer } from './renderers/boundingBoxRenderer';
+import { BoundingBox } from './objects/gizmos/boundingBox';
 
 export var device: GPUDevice;
 
@@ -16,10 +18,10 @@ export class WebGpuRenderer {
     private presentationFormat:         GPUTextureFormat;
     private context:                    GPUCanvasContext;
 
-    private cellRndr:CellRenderer;
-    private suzanneRndr:SuzanneRenderer;
+    private cellRenderer:CellRenderer;
+    private suzanneRenderer:SuzanneRenderer;
     private voxelRenderer:VoxelRenderer;
-    
+    private boundingBoxRenderer:BoundingBoxRenderer;
     private cameraProjectionArray   = new Float32Array(16);
     
     private frameErrorProbed:boolean = false;
@@ -74,8 +76,7 @@ export class WebGpuRenderer {
             },
           };
 
-        this.cellRndr = new CellRenderer();
-        this.suzanneRndr = new SuzanneRenderer();
+
 
         this.initSuccess = true;
         return this.initSuccess;
@@ -83,13 +84,15 @@ export class WebGpuRenderer {
 
     public InitUBOs(scene:Scene, camera:Camera){
         this.renderPassColorAttachment = (this.renderPassDescriptor.colorAttachments as [GPURenderPassColorAttachment])[0];
-        //temporary
-        this.voxelRenderer = new VoxelRenderer(scene.getSubject());
 
-        this.cellRndr.initUniforms(scene, camera);
-        this.suzanneRndr.initUniforms(scene, camera);
-        // this.voxelRenderer.initUniforms(scene, camera);
-        // this.voxelRenderer.CameraProjectionBuffer
+        this.cellRenderer = new CellRenderer();
+        this.suzanneRenderer = new SuzanneRenderer();
+        this.boundingBoxRenderer = new BoundingBoxRenderer(new BoundingBox(scene.getSubject()));
+        this.voxelRenderer = new VoxelRenderer(scene.getSubject());
+        
+        this.suzanneRenderer.initUniforms(scene, camera);
+        this.boundingBoxRenderer.initUniforms(scene,camera);
+        this.cellRenderer.initUniforms(scene, camera);
 
     }
 
@@ -123,11 +126,11 @@ export class WebGpuRenderer {
 
         const commandEncoder = device.createCommandEncoder();
         const passEncoder = commandEncoder.beginRenderPass(this.renderPassDescriptor);
-
         
-        this.cellRndr.frame(passEncoder, this.cameraProjectionArray);
-        this.suzanneRndr.frame(passEncoder, this.cameraProjectionArray);
-
+        this.cellRenderer.frame(passEncoder, this.cameraProjectionArray);
+        this.suzanneRenderer.frame(passEncoder, this.cameraProjectionArray);
+        this.boundingBoxRenderer.frame(passEncoder, this.cameraProjectionArray);
+        
         passEncoder.end();
         device.queue.submit([commandEncoder.finish()]);
 

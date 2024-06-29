@@ -149,7 +149,7 @@ fn mainVertex(input: VertexInput) -> VertexOutput {
     
       output.Position =  cameraViewProjectionMatrix * rotationTranslationMatrix * suzanneScaleColumnMatrix;
       output.fragUV = input.uv;
-      output.fragPosition = 0.9 * (tan(rotationTranslationMatrix * suzanneScaleColumnMatrix));
+      output.fragPosition = 0.4 * ( (rotationTranslationMatrix * suzanneScaleColumnMatrix));
     
     return output;
 }

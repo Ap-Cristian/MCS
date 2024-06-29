@@ -7,7 +7,7 @@ let connected = false;
 let activeConnection:WebSocket;
 
 function onConnectionEstablished(sock:WebSocket){
-    console.log("[Chimera-ws] Client connected... Waiting for cell changes.");
+    console.log("[Chimera-ws] Client connected... Waiting for shader changes.");
     connected = true;
     activeConnection = sock;
 }
@@ -23,7 +23,7 @@ export function sendCellRefreshSignal(){
 export function initCellWebSocket(){
     wss = new WebSocket.Server({port: APP_ENV.PORT_WEBSOCKET})
     wss.on("connection", onConnectionEstablished);
-    wss.on("close",onConnectionClosed);
+    wss.on("close", onConnectionClosed);
 
     console.log(`[${APP_ENV.APP_NAME + " " + APP_PROTOCOL_WS}] Listening on port ${APP_ENV.PORT_WEBSOCKET}`);
 }

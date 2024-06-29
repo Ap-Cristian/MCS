@@ -54,7 +54,7 @@ SuzanneRouter.get(SUZANNE_VERTEX_ENDPOINT,
 );
 
 SuzanneRouter.get(SUZANNE_FRAGMENT_ENDPOINT,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response) => {
         let obj: string;
         try{
             obj = loadSuzanneFragmenthader();

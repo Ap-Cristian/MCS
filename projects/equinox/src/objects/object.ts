@@ -28,12 +28,12 @@ export abstract class McsObject{
     private RotArray32f: Float32Array = new Float32Array(3);
     private ScaleArray32f: Float32Array = new Float32Array(3);
 
-
     //object render stuff
     protected renderPipeline:GPURenderPipeline;
     protected vertexArray: IVertex[];
     protected facesArray: IFace[];
     //
+
 
     abstract attachRenderObjects():void;
 

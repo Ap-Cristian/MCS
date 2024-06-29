@@ -1,8 +1,7 @@
-import { IVertex } from '../objects/Suzanne/IVertex';
-import { IFace } from '../objects/Suzanne/IFace';
+import { IVertex } from '../misc/IVertex';
+import { IFace } from '../misc/IFace';
 
 import fs from 'fs';
-import readline from 'readline';
 
 export class ObjFileParser{
     private objectIdentifier = '';

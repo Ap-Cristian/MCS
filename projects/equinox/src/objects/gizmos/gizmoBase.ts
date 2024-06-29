@@ -1,64 +1,21 @@
-import { IGizmo } from "../../containers/interfaces/IGizmo";
-import { Color } from "../../misc/color";
-import { McsObjectParameters } from "../../misc/mcsObjectParameters";
+import { WireframeContainer } from "../../containers/wireframe.container";
 import { McsObject } from "../object";
+import { WireframeRenderPipeline } from "./wireframe.pipeline";
 
-export class Gizmo {
+export class Gizmo extends McsObject{
+    attachRenderObjects(): void {
+        this.renderPipeline = WireframeRenderPipeline.GetInstance().Pipeline;
+        delete this.vertexArray;
+    }
     private parentObject:McsObject;
-    
-    private x:number;
-    private y:number;
-    private z:number;
 
-    private scaleX:number;
-    private scaleY:number;
-    private scaleZ:number;
+    constructor(parent: McsObject){
+        super("Gizmo", {X: parent.X, Y: parent.Y, Z: parent.Z, ScaleX: parent.ScaleX, ScaleY: parent.ScaleY, ScaleZ: parent.ScaleZ});
 
-    public get X():number{
-        return this.X;
-    }
-    public get Y():number{
-        return this.Y;
-    }
-    public get Z():number{
-        return this.Z;
-    }    
-    public get ScaleX():number{
-        return this.ScaleX;
-    }
-    public get ScaleY():number{
-        return this.ScaleY;
-    }
-    public get ScaleZ():number{
-        return this.ScaleZ;
-    }
-    
-    public set X(value:number){
-        this.X = value;
-    }
-    public set Y(value:number){
-        this.Y = value;
-    }
-    public set Z(value:number){
-        this.Z = value;
-    }
-    public set ScaleX(value:number){
-        this.ScaleX = value;
-    }
-    public set ScaleY(value:number){
-        this.ScaleY = value;
-    }
-    public set ScaleZ(value:number){
-        this.ScaleZ = value;
-    }
+        delete this.RotationX;
+        delete this.RotationX;
+        delete this.RotationX;
 
-    constructor(params:IGizmo){
-        params.parent ? this.parentObject = params.parent : this.parentObject = null;
-        
-        if(params && params.parent){
-            this.X = params.parent.X;
-            this.Y = params.parent.Y;
-            this.Z = params.parent.Z;
-        }
+        this.parentObject = parent;
     }
 }

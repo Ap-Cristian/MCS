@@ -17,7 +17,7 @@ export class VoxelRenderer extends Renderer{
         var objectVertecies = this.mainObject.VertexArray;
         
         for(var i = 0; i < objectVertecies.length; i++){
-            console.log(objectVertecies[i].pos + ' ');
+            // console.log(objectVertecies[i].pos + ' ');
         }
     }
 
