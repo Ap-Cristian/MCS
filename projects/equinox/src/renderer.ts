@@ -3,7 +3,6 @@ import { Camera } from './objects/camera/camera';
 import { FpsCounter } from './misc/fpsCounter/FPSCoutner';
 import { CellRenderer } from './renderers/cellRenderer';
 import { SuzanneRenderer } from './renderers/suzanneRenderer';
-import { VoxelRenderer } from './renderers/voxelRenderer';
 import { BoundingBoxRenderer } from './renderers/boundingBoxRenderer';
 import { BoundingBox } from './objects/gizmos/boundingBox';
 
@@ -20,7 +19,6 @@ export class WebGpuRenderer {
 
     private cellRenderer:CellRenderer;
     private suzanneRenderer:SuzanneRenderer;
-    private voxelRenderer:VoxelRenderer;
     private boundingBoxRenderer:BoundingBoxRenderer;
     private cameraProjectionArray   = new Float32Array(16);
     
@@ -87,13 +85,13 @@ export class WebGpuRenderer {
 
         this.cellRenderer = new CellRenderer();
         this.suzanneRenderer = new SuzanneRenderer();
-        this.boundingBoxRenderer = new BoundingBoxRenderer(new BoundingBox(scene.getSubject()));
-        this.voxelRenderer = new VoxelRenderer(scene.getSubject());
+        this.boundingBoxRenderer = new BoundingBoxRenderer();
         
         this.suzanneRenderer.initUniforms(scene, camera);
         this.boundingBoxRenderer.initUniforms(scene,camera);
-        this.cellRenderer.initUniforms(scene, camera);
+        scene.spawnInitialCells(0.3);
 
+        this.cellRenderer.initUniforms(scene, camera);
     }
 
     public updateMain(canvas: HTMLCanvasElement) {

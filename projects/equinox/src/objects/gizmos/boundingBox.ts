@@ -25,12 +25,14 @@ export class BoundingBox extends Gizmo{
         7, 3
     ]);
 
-    private vertecies: IVertex[];
+    public TopVertecies:IVertex[];
+    public BottomVertecies:IVertex[];
+
     public get Vertecies(): IVertex[]{
-        if(!this.vertecies)
+        if(!this.VertexArray)
             this.findBoundingBoxVertexCoordinates();
 
-        return this.vertecies;
+        return this.VertexArray;
     }
 
     private findBoundingBoxVertexCoordinates(): void{
@@ -56,7 +58,7 @@ export class BoundingBox extends Gizmo{
                 vertex.pos[2] > v7.pos[2] ? v7.pos[2] = vertex.pos[2] : null;  
             })
             
-            //le cube
+            //The box... ER UR
             var v1:IVertex = {
                 norm:[0,0,0],
                 pos:[0,0,0],
@@ -88,14 +90,21 @@ export class BoundingBox extends Gizmo{
                 uv:[0,0,0]
             };
 
-            v1.pos = [v7.pos[0],    v0.pos[1],      v7.pos[2]];
-            v2.pos = [v7.pos[0],    v0.pos[1],      v0.pos[2]];
-            v3.pos = [v7.pos[0],    v7.pos[1],      v0.pos[2]];
-            v4.pos = [v0.pos[0],    v7.pos[1],      v7.pos[2]];
-            v5.pos = [v0.pos[0],    v0.pos[1],      v7.pos[2]];
-            v6.pos = [v0.pos[0],    v7.pos[1],      v0.pos[2]];
+            v1.pos = [v7.pos[0],    v0.pos[1],      v7.pos[2]]; //bottom
+            v2.pos = [v7.pos[0],    v0.pos[1],      v0.pos[2]]; //bottom
+            v5.pos = [v0.pos[0],    v0.pos[1],      v7.pos[2]]; //bottom
 
-            this.vertecies = [v0, v1, v2, v3, v4, v5, v6, v7];
+            v3.pos = [v7.pos[0],    v7.pos[1],      v0.pos[2]]; //top
+            v4.pos = [v0.pos[0],    v7.pos[1],      v7.pos[2]]; //top
+            v6.pos = [v0.pos[0],    v7.pos[1],      v0.pos[2]]; //top
+
+            this.VertexArray = [v0, v1, v2, v3, v4, v5, v6, v7];
+
+            this.TopVertecies = [v6,v3,v4,v7]; //ordered left to right
+            this.BottomVertecies = [v0,v2,v5,v1];
+
+
+
         }else{
             throw("BoundingBoxRenderer: Parent object not set!");
         }
@@ -103,7 +112,8 @@ export class BoundingBox extends Gizmo{
 
     constructor(parent:McsObject, color?:Color){
         super(parent);
+
         this.Parent = parent;
-        this.Color = color ? color : new Color(255,255,255);
+        this.Color = color ? color : Color.WHITE;
     }
 }

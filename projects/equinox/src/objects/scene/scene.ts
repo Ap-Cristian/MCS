@@ -1,39 +1,57 @@
 import { vec3 } from "gl-matrix";
 import { McsObject } from "../object";
-
+import { BoundingBox } from "../gizmos/boundingBox";
+import { Color } from "../../misc/color";
+import { Cell } from "../cell/cell";
 
 export class Scene{
-    public pointLightPosition = vec3.fromValues(0, 0, 0);
-
     private subject: McsObject | null;
-    private objects: McsObject[] = [];
+    public SubjectBoundingBox: BoundingBox;
+
+    //cells go in objects?
+    public Objects: McsObject[] = [];
 
     public add(objectsToAdd?: McsObject | Array<McsObject>) {
         if (objectsToAdd) {
             if (Array.isArray(objectsToAdd)) {
                 objectsToAdd.forEach((obj) => {
-                    this.objects.push(obj);
+                    this.Objects.push(obj);
                 })
             }
             else {
-                this.objects.push(objectsToAdd);
+                this.Objects.push(objectsToAdd);
             }
         }
     }
 
-    public setSubject(subject:McsObject){
-        this.subject = subject;
+    public spawnInitialCells(density:number){
+        this.SubjectBoundingBox.BottomVertecies.forEach((vertex)=>{
+            this.add(new Cell({
+                X:vertex.pos[0], 
+                Y:vertex.pos[1], 
+                Z:vertex.pos[2], 
+                ScaleX:0.1, 
+                ScaleY:0.1, 
+                ScaleZ:0.1
+            }));
+        })
+        console.log(this.Objects, this.Objects.length)
+        // this.add(new Cell({
+        //     X:this.SubjectBoundingBox.X, 
+        //     Y:this.SubjectBoundingBox.Y, 
+        //     Z:this.SubjectBoundingBox.Z, 
+        //     ScaleX:cellScale, 
+        //     ScaleY:cellScale, 
+        //     ScaleZ:cellScale
+        // }));
     }
 
-    public getObjects(): McsObject[] {
-        return this.objects;
+    public set Subject(value: McsObject){
+        this.subject = value;
+        this.SubjectBoundingBox = new BoundingBox(this.subject, Color.WHITE);
     }
 
-    public getSubject(): McsObject{
+    public get Subject():McsObject{
         return this.subject;
-    }
-
-    public getPointLightPosition(): Float32Array {
-        return this.pointLightPosition as Float32Array;
     }
 }

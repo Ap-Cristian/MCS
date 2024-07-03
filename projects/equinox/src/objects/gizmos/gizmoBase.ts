@@ -1,11 +1,10 @@
-import { WireframeContainer } from "../../containers/wireframe.container";
 import { McsObject } from "../object";
 import { WireframeRenderPipeline } from "./wireframe.pipeline";
 
 export class Gizmo extends McsObject{
     attachRenderObjects(): void {
         this.renderPipeline = WireframeRenderPipeline.GetInstance().Pipeline;
-        delete this.vertexArray;
+        // delete this.VertexArray;
     }
     private parentObject:McsObject;
 

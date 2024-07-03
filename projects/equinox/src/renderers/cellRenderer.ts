@@ -1,5 +1,4 @@
 import { CellShaderContainer } from "../containers/cell-shader.container";
-import { NUMBER_OF_CELLS } from "../engine";
 import { Camera } from "../objects/camera/camera";
 import { CellRenderPipeline } from "../objects/cell/cell.render.pipeline";
 import { Scene } from "../objects/scene/scene";
@@ -19,6 +18,7 @@ export class CellRenderer extends Renderer{
     private cell_shaderContainer:       CellShaderContainer;
 
     private frameErrorProbed:boolean = false;
+    private NUMBER_OF_CELLS:number;
 
     constructor(){
         super();
@@ -28,19 +28,22 @@ export class CellRenderer extends Renderer{
     }
 
     initUniforms(scene: Scene, camera: Camera): void {
+        this.NUMBER_OF_CELLS = scene.Objects.length; 
+        
+        console.log(scene);
         if(!this.frameErrorProbed){
             device.pushErrorScope("validation")
             device.pushErrorScope("out-of-memory")
             device.pushErrorScope("internal")
         }
+        var objects = scene.Objects;
 
-        var objects = scene.getObjects();
-        this.cell_positionArray = new Float32Array(NUMBER_OF_CELLS * 3);
-        this.cell_rotationArray = new Float32Array(NUMBER_OF_CELLS * 3);
-        this.cell_scaleArray = new Float32Array(NUMBER_OF_CELLS * 3);
+        this.cell_positionArray = new Float32Array(this.NUMBER_OF_CELLS * 3);
+        this.cell_rotationArray = new Float32Array(this.NUMBER_OF_CELLS * 3);
+        this.cell_scaleArray = new Float32Array(this.NUMBER_OF_CELLS * 3);
 
         var currentMemOffset = 0;
-        for(let i = 0; i < NUMBER_OF_CELLS; i++){
+        for(let i = 0; i < this.NUMBER_OF_CELLS; i++){
             this.cell_positionArray[currentMemOffset] = objects[i].X;
             this.cell_rotationArray[currentMemOffset] = objects[i].RotationX;
             this.cell_scaleArray[currentMemOffset]    = objects[i].ScaleX;
@@ -60,29 +63,21 @@ export class CellRenderer extends Renderer{
         console.log("DEV_VIDEO_MAX_BUFFER_MEM_SIZE: ", device.limits.maxBufferSize)
         console.log("DEV_VIDEO_MAX_UNIFORM_MEM_SIZE: ", device.limits.maxUniformBufferBindingSize)
 
-        // var uniformBindingsCount = 1024 > 4 * 16 * NUMBER_OF_CELLS ? 1024 : 4 * 16 * NUMBER_OF_CELLS
-
         this.cell_positionBuffer = device.createBuffer({
-            size: Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS < 16 ? 
-                    16 : Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            size: Float32Array.BYTES_PER_ELEMENT * 3 * this.NUMBER_OF_CELLS < 16 ? 
+                    16 : Float32Array.BYTES_PER_ELEMENT * 3 * this.NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
         this.cell_scaleBuffer = device.createBuffer({
-            size:  Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS < 16 ? 
-                    16 : Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            size:  Float32Array.BYTES_PER_ELEMENT * 3 * this.NUMBER_OF_CELLS < 16 ? 
+                    16 : Float32Array.BYTES_PER_ELEMENT * 3 * this.NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
         this.cell_rotationBuffer = device.createBuffer({
-            size:  Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS < 16 
-                    ? 16 : Float32Array.BYTES_PER_ELEMENT * 3 * NUMBER_OF_CELLS, // MEM SIZE EXCEDED
+            size:  Float32Array.BYTES_PER_ELEMENT * 3 * this.NUMBER_OF_CELLS < 16 
+                    ? 16 : Float32Array.BYTES_PER_ELEMENT * 3 * this.NUMBER_OF_CELLS, // MEM SIZE EXCEDED
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
-
-        // !
-        // this.cameraProjectionBuffer = device.createBuffer({
-        //     size: 16 * Float32Array.BYTES_PER_ELEMENT,
-        //     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        // });
 
         var uniformBindGroupEntries:Iterable<GPUBindGroupEntry> = [
             {
@@ -99,6 +94,12 @@ export class CellRenderer extends Renderer{
             },
             {
                 binding: 2,
+                resource: {                         //scale
+                  buffer: this.cell_scaleBuffer,
+                }
+            },
+            {
+                binding: 3,
                 resource: {                         //camera
                   buffer: this.cameraProjectionBuffer,
                 }
@@ -185,6 +186,6 @@ export class CellRenderer extends Renderer{
         passEncoder.setVertexBuffer(0, this.cell_verticesBuffer);
         passEncoder.setPipeline(this.cell_renderPipeline);
         passEncoder.setBindGroup(0, this.cell_uniformBindGroup);
-        passEncoder.draw(this.cell_shaderContainer.vertexArray.length, NUMBER_OF_CELLS, 0, 0);
+        passEncoder.draw(this.cell_shaderContainer.vertexArray.length, this.NUMBER_OF_CELLS, 0, 0);
     }
 }

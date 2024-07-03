@@ -31,7 +31,7 @@ export class SuzanneRenderer extends Renderer{
             device.pushErrorScope("internal")
         }
 
-        this.subject = scene.getSubject();
+        this.subject = scene.Subject;
         this.subject_indexData = new Uint16Array(this.subject.FacesArray.length * 3 * Uint16Array.BYTES_PER_ELEMENT);
 
         this.suzanne_positionUB = device.createBuffer({

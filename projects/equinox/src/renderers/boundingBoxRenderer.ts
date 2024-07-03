@@ -18,14 +18,13 @@ export class BoundingBoxRenderer extends Renderer{
     private boundingBox_uniformBindGroup:   GPUBindGroup;
     private frameErrorProbed:boolean = false;
 
-    constructor(boundingBox:BoundingBox){
+    constructor(){
         super();
-        this.boundingBox = boundingBox;
-        this.parent = boundingBox.Parent;
     }
 
     initUniforms(scene: Scene, camera: Camera): void {
-        this.parent = scene.getSubject();
+        this.parent = scene.Subject;
+        this.boundingBox = scene.SubjectBoundingBox;
 
         if(!this.frameErrorProbed){
             device.pushErrorScope("validation")

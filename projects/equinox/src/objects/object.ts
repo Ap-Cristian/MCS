@@ -1,10 +1,5 @@
-import { vec3 } from "gl-matrix";
 import { McsObjectParameters } from "../misc/mcsObjectParameters";
-import { SuzanneRenderPipeline } from "./suzanne/suzanne.render.pipeline";
-import { CellRenderPipeline } from "./cell/cell.render.pipeline";
 import { IVertex } from "../containers/interfaces/IVertex";
-import { SuzanneContainer } from "../containers/suzanne.container";
-import { CellShaderContainer } from "../containers/cell-shader.container";
 import { IFace } from "../containers/interfaces/IFace";
 
 export abstract class McsObject{
@@ -23,36 +18,21 @@ export abstract class McsObject{
 
     public type:string = '';
 
-    //gpu readable form
+    //array type for gpu buff
     private PosArray32f: Float32Array = new Float32Array(3);
     private RotArray32f: Float32Array = new Float32Array(3);
     private ScaleArray32f: Float32Array = new Float32Array(3);
 
     //object render stuff
     protected renderPipeline:GPURenderPipeline;
-    protected vertexArray: IVertex[];
+    private vertexArray: IVertex[];
     protected facesArray: IFace[];
-    //
-
 
     abstract attachRenderObjects():void;
 
     constructor(objType:string, parameter?: McsObjectParameters) {
         this.setTransformation(parameter);
         this.type = objType;
-        // switch(this.type){
-        //     case 'suzanne':
-        //         this.renderPipeline = SuzanneRenderPipeline.GetInstance().Pipeline;
-        //         this.vertexArray = SuzanneContainer.getInstance().vertecies;
-        //         this.facesArray = SuzanneContainer.getInstance().faces;
-        //         break;
-        //     case 'cell':
-        //         this.renderPipeline = CellRenderPipeline.GetInstance().Pipeline;
-        //         this.vertexArray = CellShaderContainer.getInstance().vertexArray;
-        //         break;
-        //     default:
-        //         break;
-        // }
 
         this.attachRenderObjects();
     }
@@ -170,6 +150,10 @@ export abstract class McsObject{
     public set ScaleZ(value:number){
         this.scaleZ = value;
         this.GPUScaleArray[2] = value;
+    }
+
+    protected set VertexArray(value:IVertex[]){
+        this.vertexArray = value;
     }
 
     private setTransformation(parameter?: McsObjectParameters) {

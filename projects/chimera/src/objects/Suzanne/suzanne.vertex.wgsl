@@ -128,7 +128,7 @@ fn scaleColumnMatrix(scaleValues:vec3f, vertPos:vec4f) -> vec4f{
 struct VertexOutput {
   @builtin(position) Position: vec4f,
   @location(0) fragUV: vec2f,
-  @location(1) fragPosition: vec4f,
+  @location(1) fragColor: vec4f,
 }
 
 struct VertexInput {
@@ -149,7 +149,7 @@ fn mainVertex(input: VertexInput) -> VertexOutput {
     
       output.Position =  cameraViewProjectionMatrix * rotationTranslationMatrix * suzanneScaleColumnMatrix;
       output.fragUV = input.uv;
-      output.fragPosition = 0.9 * (tan(rotationTranslationMatrix * suzanneScaleColumnMatrix));
+      output.fragColor = 0.5 * (tan(vec4f(0,0,1,0) * suzanneScaleColumnMatrix * rotationTranslationMatrix));
     
     return output;
 }

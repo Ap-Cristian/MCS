@@ -9,7 +9,6 @@ export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 10 : 0;
 export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW ** 3; 
 
 export class Engine{
-
     private htmlCanvas:HTMLCanvasElement;
     private mainRenderer:WebGpuRenderer;
     private mainCam:Camera;
@@ -74,7 +73,7 @@ export class Engine{
                     currentY = 0;
                 }
 
-                this.mainScene.setSubject(new Suzanne({X:0, Y:0, Z:0}));
+                this.mainScene.Subject = new Suzanne({X:0, Y:0, Z:0});
 
                 // this.mainCam.lookAt = this.mainScene.getObjects()[0].Transform;
                 console.log("Instanciated", cellsCount, "cells!");

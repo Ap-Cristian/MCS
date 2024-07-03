@@ -9,19 +9,12 @@ const DEBUG_DISABLE_CELL_LOGIC = false;
 export class Cell extends McsObject{
     attachRenderObjects(): void {
         this.renderPipeline = CellRenderPipeline.GetInstance().Pipeline;
-        this.vertexArray = CellShaderContainer.getInstance().vertexArray;
+        this.VertexArray = CellShaderContainer.getInstance().vertexArray;
     }
-
-    public TempValue: number = 9999;
-
-    private defaultColor: Color = {
-        R: 0.9,
-        G: 0.6,
-        B: 0.1,
-    }
+    public TempValue: number = 0;
 
     constructor(cellParameters:McsObjectParameters){
-        super("cell",cellParameters);
+        super("cell", cellParameters);
     }
 
 }

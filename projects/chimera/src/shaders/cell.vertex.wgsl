@@ -1,47 +1,12 @@
-// struct Uniforms {               // 4x4 transform matrices
-//     transform : array<mat4x4<f32>>,    // translate AND rotate
-// };
-
-// struct Camera {                 // 4x4 transform matrix
-//     matrix : mat4x4<f32>,
-// };
-
-// struct Color {                  // RGB color
-//     color: vec3<f32>
-// };
-
-// // bind model/camera/color buffers
-// @group(0) @binding(0) var<uniform> modelsTransforms   : Uniforms;
-// @group(0) @binding(1) var<storage,read> color        : Color;
-// @group(0) @binding(2) var<uniform> cameraTransform   : Camera;
-
-// // output struct of this vertex shader
-// struct VertexOutput {
-//     @builtin(position) Position : vec4<f32>,
-//     @location(0) fragColor : vec3<f32>,
-//     @location(1) fragNorm : vec3<f32>,
-//     @location(3) fragPos : vec3<f32>,
-// };
-
-// // input struct according to vertex buffer stride
-// struct VertexInput {
-//     @builtin(instance_index) instanceIndex: u32,
-//     @location(0) position : vec3<f32>,
-//     @location(1) norm : vec3<f32>,
-//     @location(2) uv : vec2<f32>,
-// };
-
-// @vertex
-// fn main(input: VertexInput) -> VertexOutput {
-
-//     var output: VertexOutput;
-//     var transformedPosition: vec4<f32> = modelsTransforms.transform[input.instanceIndex] * vec4<f32>(input.position, 1.0);
-    
-//     output.Position = cameraTransform.matrix * transformedPosition;             // transformed with model & camera projection
-//     output.fragColor = color.color;                                             // fragment color from buffer
-
-//     return output;
-// }
+fn scaleColumnMatrix(scaleValues:vec3f, vertPos:vec4f) -> vec4f{
+  var scaleMatrix = mat4x4<f32>(
+    vec4(scaleValues.x,        0,               0,       0),
+    vec4(0,              scaleValues.y,         0,       0),
+    vec4(0,                     0,       scaleValues.z,  0),
+    vec4(0,                     0,               0,      1)
+  );
+  return scaleMatrix * vertPos;
+}
 
 fn translateMatrix(translation: vec3f) -> mat4x4<f32> {
     return mat4x4<f32>(
@@ -168,7 +133,9 @@ struct CellRotations {
 
 @group(0) @binding(0) var<storage, read> cellsRotation :        CellRotations;
 @group(0) @binding(1) var<storage, read> cellsPositions :       CellPositions;
-@group(0) @binding(2) var<uniform> cameraViewProjectionMatrix : mat4x4f;
+@group(0) @binding(2) var<storage, read> cellsScales :          CellScales;
+
+@group(0) @binding(3) var<uniform> cameraViewProjectionMatrix : mat4x4f;
 
 struct VertexOutput {
   @builtin(position) Position: vec4f,
@@ -201,7 +168,15 @@ fn mainVertex(input: VertexInput) -> VertexOutput {
     rotationTranslationMatrix = rotateY(rotationTranslationMatrix, cellRotationVec[1]);
     rotationTranslationMatrix = rotateZ(rotationTranslationMatrix, cellRotationVec[2]);
     
-    output.Position = cameraViewProjectionMatrix * rotationTranslationMatrix  * input.position;
+    var scaleValueVector = vec3f(
+      cellsScales.scale[input.instanceIdx * 3 + 0],
+      cellsScales.scale[input.instanceIdx * 3 + 1],
+      cellsScales.scale[input.instanceIdx * 3 + 2]
+    ); 
+    
+    var scaleMatrix: vec4f = scaleColumnMatrix(scaleValueVector, input.position);
+
+    output.Position = cameraViewProjectionMatrix * rotationTranslationMatrix  * scaleMatrix;
     output.fragUV = input.uv;
     output.fragPosition = 0.5 * (input.position + vec4(1.0));
     return output;
