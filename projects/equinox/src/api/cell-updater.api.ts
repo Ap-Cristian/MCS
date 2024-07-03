@@ -1,4 +1,4 @@
-export class cellWatcherClient{
+export class cellWatcherAPI{
     private static ws:WebSocket;
 
     private static onConnected(){

@@ -1,5 +1,5 @@
 import { McsObject } from "./object";
-import { WireframeRenderPipeline } from "../render-pipelines/wireframe.pipeline";
+import { WireframeRenderPipeline } from "../res/render-pipelines/wireframe.pipeline";
 
 export class Gizmo extends McsObject{
     attachRenderObjects(): void {

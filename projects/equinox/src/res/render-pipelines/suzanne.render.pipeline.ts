@@ -1,10 +1,10 @@
-import { SuzanneContainer } from "../containers/suzanne.container";
-import { device } from "../objects/renderer";
+import { SuzanneShaderResources } from "../suzanne.res";
+import { device } from "../../objects/renderer";
 
 export class SuzanneRenderPipeline{
     private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv, 3 for color
     private stride:number = this.perVertex * 4; //4 bytes
-    private suzanneShaderContainer = SuzanneContainer.getInstance();
+    private suzanneShaderContainer = SuzanneShaderResources.getInstance();
     
     public Pipeline:GPURenderPipeline;
 

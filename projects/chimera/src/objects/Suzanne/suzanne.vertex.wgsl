@@ -149,7 +149,7 @@ fn mainVertex(input: VertexInput) -> VertexOutput {
     
       output.Position =  cameraViewProjectionMatrix * rotationTranslationMatrix * suzanneScaleColumnMatrix;
       output.fragUV = input.uv;
-      output.fragColor = 0.5 * (tan(vec4f(0,0,1,0) * suzanneScaleColumnMatrix * rotationTranslationMatrix));
+      output.fragColor = 0.5 * ((suzanneScaleColumnMatrix * rotationTranslationMatrix));
     
     return output;
 }

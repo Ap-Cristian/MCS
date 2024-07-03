@@ -1,6 +1,6 @@
-import { McsObjectParameters } from "../interfaces/IMcsObjectParameters";
-import { IVertex } from "../interfaces/IVertex";
-import { IFace } from "../interfaces/IFace";
+import { McsObjectParameters } from "../res/interfaces/IMcsObjectParameters";
+import { IVertex } from "../res/interfaces/IVertex";
+import { IFace } from "../res/interfaces/IFace";
 
 export abstract class McsObject{
     //human readable form

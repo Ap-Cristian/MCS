@@ -1,21 +1,20 @@
-import { CellShaderContainer } from "../containers/cell-shader.container";
-import { device } from "../objects/renderer";
+import { WireframeShaderResources } from "../wireframe.res";
+import { device } from "../../objects/renderer";
 
-export class CellRenderPipeline{
-    private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv, 3 for color
-    private stride:number = this.perVertex * 4; //4 bytes
-    private cellShaderContainer = CellShaderContainer.getInstance();
+export class WireframeRenderPipeline{
+    private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv
+    private stride:number = this.perVertex * 4;           // 4 bytes
+    private wireframeContainerInstance = WireframeShaderResources.getInstance();
+
     public Pipeline:GPURenderPipeline;
 
     private constructor(){
         if (device) {
-            var vertexShaderModule = device.createShaderModule({ code: this.cellShaderContainer.vertexCode });
-            var fragmentShaderModule = device.createShaderModule({ code: this.cellShaderContainer.fragmentCode });
+            var vertexShaderModule = device.createShaderModule({ code: this.wireframeContainerInstance.vertexCode });
+            var fragmentShaderModule = device.createShaderModule({ code: this.wireframeContainerInstance.fragmentCode });
 
             var vertexCompilationInfo = vertexShaderModule.getCompilationInfo();
             var fragmentCompilationInfo = fragmentShaderModule.getCompilationInfo();
-
-            //pipeline issue
 
             vertexCompilationInfo.then((info)=>{
                 console.log("Vertex shader compilation complaints should appear after this ------")
@@ -63,7 +62,7 @@ export class CellRenderPipeline{
                   ],
                 } as GPUFragmentState,
                 primitive: {
-                  topology: 'triangle-list',
+                  topology: 'line-list',
                   cullMode: 'back',
                 },
                 depthStencil: {
@@ -79,12 +78,12 @@ export class CellRenderPipeline{
         
     }
 
-    public static instance:CellRenderPipeline;
-    public static GetInstance():CellRenderPipeline{
+    public static instance:WireframeRenderPipeline;
+    public static GetInstance():WireframeRenderPipeline{
         if(this.instance != null){
             return this.instance;
         }
-        this.instance = new CellRenderPipeline();
+        this.instance = new WireframeRenderPipeline();
         return this.instance;
     }
 }

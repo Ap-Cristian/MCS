@@ -1,6 +1,6 @@
 import { Scene } from './scene';
 import { Camera } from './camera';
-import { FPSCounter } from '../helpers/fpsCounter';
+import { FPSCounter } from './fpsCounter';
 import { CellRenderer } from '../renderers/cellRenderer';
 import { SuzanneRenderer } from '../renderers/suzanneRenderer';
 import { BoundingBoxRenderer } from '../renderers/boundingBoxRenderer';

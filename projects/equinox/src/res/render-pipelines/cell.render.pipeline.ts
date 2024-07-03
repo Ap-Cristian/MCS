@@ -1,21 +1,21 @@
-import { CellShaderContainer } from "../containers/cell-shader.container";
-import { WireframeContainer } from "../containers/wireframe.container";
-import { device } from "../objects/renderer";
+import { CellShaderResources } from "../cell.res";
+import { device } from "../../objects/renderer";
 
-export class WireframeRenderPipeline{
-    private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv
-    private stride:number = this.perVertex * 4;           // 4 bytes
-    private wireframeContainerInstance = WireframeContainer.getInstance();
-
+export class CellRenderPipeline{
+    private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv, 3 for color
+    private stride:number = this.perVertex * 4; //4 bytes
+    private cellShaderContainer = CellShaderResources.getInstance();
     public Pipeline:GPURenderPipeline;
 
     private constructor(){
         if (device) {
-            var vertexShaderModule = device.createShaderModule({ code: this.wireframeContainerInstance.vertexCode });
-            var fragmentShaderModule = device.createShaderModule({ code: this.wireframeContainerInstance.fragmentCode });
+            var vertexShaderModule = device.createShaderModule({ code: this.cellShaderContainer.vertexCode });
+            var fragmentShaderModule = device.createShaderModule({ code: this.cellShaderContainer.fragmentCode });
 
             var vertexCompilationInfo = vertexShaderModule.getCompilationInfo();
             var fragmentCompilationInfo = fragmentShaderModule.getCompilationInfo();
+
+            //pipeline issue
 
             vertexCompilationInfo.then((info)=>{
                 console.log("Vertex shader compilation complaints should appear after this ------")
@@ -63,7 +63,7 @@ export class WireframeRenderPipeline{
                   ],
                 } as GPUFragmentState,
                 primitive: {
-                  topology: 'line-list',
+                  topology: 'triangle-list',
                   cullMode: 'back',
                 },
                 depthStencil: {
@@ -79,12 +79,12 @@ export class WireframeRenderPipeline{
         
     }
 
-    public static instance:WireframeRenderPipeline;
-    public static GetInstance():WireframeRenderPipeline{
+    public static instance:CellRenderPipeline;
+    public static GetInstance():CellRenderPipeline{
         if(this.instance != null){
             return this.instance;
         }
-        this.instance = new WireframeRenderPipeline();
+        this.instance = new CellRenderPipeline();
         return this.instance;
     }
 }

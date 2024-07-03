@@ -1,6 +1,6 @@
-import { CellShaderContainer } from "../containers/cell-shader.container";
+import { CellShaderResources } from "../res/cell.res";
 import { Camera } from "../objects/camera";
-import { CellRenderPipeline } from "../render-pipelines/cell.render.pipeline";
+import { CellRenderPipeline } from "../res/render-pipelines/cell.render.pipeline";
 import { Scene } from "../objects/scene";
 import { device } from "../objects/renderer";
 import { Renderer } from "../base-classes/rendererBase";
@@ -15,7 +15,7 @@ export class CellRenderer extends Renderer{
     private cell_verticesBuffer:        GPUBuffer;
     private cell_positionBuffer:        GPUBuffer;
     private cell_uniformBindGroup:      GPUBindGroup;
-    private cell_shaderContainer:       CellShaderContainer;
+    private cell_shaderContainer:       CellShaderResources;
 
     private frameErrorProbed:boolean = false;
     private NUMBER_OF_CELLS:number;
@@ -24,7 +24,7 @@ export class CellRenderer extends Renderer{
         super();
 
         this.cell_renderPipeline = CellRenderPipeline.GetInstance().Pipeline;
-        this.cell_shaderContainer = CellShaderContainer.getInstance();
+        this.cell_shaderContainer = CellShaderResources.getInstance();
     }
 
     initUniforms(scene: Scene, camera: Camera): void {

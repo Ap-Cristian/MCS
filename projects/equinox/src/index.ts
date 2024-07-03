@@ -1,14 +1,15 @@
-import { CellShaderContainer } from "./containers/cell-shader.container";
-import { WireframeContainer } from "./containers/wireframe.container";
-import { cellWatcherClient } from "./services/cell-updater-service";
-import { SuzanneContainer } from "./containers/suzanne.container";
+import { CellShaderResources } from "./res/cell.res";
+import { SuzanneShaderResources } from "./res/suzanne.res";
+import { WireframeShaderResources } from "./res/wireframe.res";
+
+import { cellWatcherAPI } from "./api/cell-updater.api";
 import { Engine } from "./objects/engine";
 import "./style.scss";
 
 function initAppResources(){
-    var cellShaderContainer = CellShaderContainer.getInstance();
-    var suzanneShaderContainer = SuzanneContainer.getInstance();
-    var wireframeShaderContainer = WireframeContainer.getInstance();
+    var cellShaderContainer = CellShaderResources.getInstance();
+    var suzanneShaderContainer = SuzanneShaderResources.getInstance();
+    var wireframeShaderContainer = WireframeShaderResources.getInstance();
 
     Promise.all([
         cellShaderContainer.fetchData(), 
@@ -25,7 +26,7 @@ function resumeAfterResourceLoad(){
 
 export function main(){
     initAppResources();
-    cellWatcherClient.initWebsocketClient();
+    cellWatcherAPI.initWebsocketClient();
 }
 
 main();

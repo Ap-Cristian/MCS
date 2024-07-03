@@ -6,8 +6,7 @@ const FRAGMENT_SHADER:string = "/fragmentShader";
 const VERTEX_SHADER:string = "/vertexShader";
 const CELL_VERTEX_ARRAY = '/vertexArray';
 
-
-export class CellShaderService{
+export class CellShaderAPI{
 
     constructor(){}
     

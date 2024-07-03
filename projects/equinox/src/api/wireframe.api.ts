@@ -6,7 +6,7 @@ const VTX_ENDPOINT:string = "/vertexShader";
 const FRG_ENDPOINT:string = "/fragmentShader";
 
 
-export class WireframeService{
+export class WireframeAPI{
     constructor(){}
 
     public static GetWireframeVertexShader():Promise<AxiosResponse<any,any>>{

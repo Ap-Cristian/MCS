@@ -9,7 +9,7 @@ const FRG_ENDPOINT:string = "/fragShader";
 
 
 
-export class SuzanneService{
+export class SuzanneAPI{
     constructor(){}
     
     public static GetSuzanneVerteciesAndFaces():Promise<AxiosResponse<any,any>>{
