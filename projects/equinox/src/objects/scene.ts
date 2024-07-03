@@ -1,5 +1,5 @@
 import { vec3 } from "gl-matrix";
-import { McsObject } from "./object";
+import { McsObject } from "../base-classes/object";
 import { BoundingBox } from "./gizmos/boundingBox";
 import { Color } from "../helpers/color";
 import { Cell } from "./cell";

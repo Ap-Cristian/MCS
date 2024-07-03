@@ -1,8 +1,8 @@
 import { Camera } from "../objects/camera";
-import { McsObject } from "../objects/object";
+import { McsObject } from "../base-classes/object";
 import { Scene } from "../objects/scene";
 import { device } from "../objects/renderer";
-import { Renderer } from "./rendererBase";
+import { Renderer } from "../base-classes/rendererBase";
 
 export class SuzanneRenderer extends Renderer{
     private suzanne_positionUB:         GPUBuffer;

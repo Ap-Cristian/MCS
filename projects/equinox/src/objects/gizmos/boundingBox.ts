@@ -1,7 +1,7 @@
 import { IVertex } from "../../interfaces/IVertex";
 import { Color } from "../../helpers/color";
-import { McsObject } from "../object";
-import { Gizmo } from "./gizmoBase";
+import { McsObject } from "../../base-classes/object";
+import { Gizmo } from "../../base-classes/gizmoBase";
 
 export class BoundingBox extends Gizmo{
     public Color:Color;

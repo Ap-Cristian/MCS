@@ -1,9 +1,9 @@
 import { Camera } from "../objects/camera";
 import { BoundingBox } from "../objects/gizmos/boundingBox";
-import { McsObject } from "../objects/object";
+import { McsObject } from "../base-classes/object";
 import { Scene } from "../objects/scene";
 import { device } from "../objects/renderer";
-import { Renderer } from "./rendererBase";
+import { Renderer } from "../base-classes/rendererBase";
 
 export class BoundingBoxRenderer extends Renderer{
     private boundingBox:                    BoundingBox;

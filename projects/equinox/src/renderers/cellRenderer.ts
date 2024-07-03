@@ -3,7 +3,7 @@ import { Camera } from "../objects/camera";
 import { CellRenderPipeline } from "../render-pipelines/cell.render.pipeline";
 import { Scene } from "../objects/scene";
 import { device } from "../objects/renderer";
-import { Renderer } from "./rendererBase";
+import { Renderer } from "../base-classes/rendererBase";
 
 export class CellRenderer extends Renderer{
     private cell_positionArray:         Float32Array;

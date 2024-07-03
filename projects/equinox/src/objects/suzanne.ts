@@ -1,6 +1,6 @@
 import { SuzanneContainer } from "../containers/suzanne.container";
 import { McsObjectParameters } from "../interfaces/IMcsObjectParameters";
-import { McsObject } from "./object";
+import { McsObject } from "../base-classes/object";
 import { SuzanneRenderPipeline } from "../render-pipelines/suzanne.render.pipeline";
 
 export class Suzanne extends McsObject{
