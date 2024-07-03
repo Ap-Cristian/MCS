@@ -1,7 +1,7 @@
-import { Camera } from "./objects/camera";
-import { Cell } from "./objects/cell";
-import { Scene } from "./objects/scene";
-import { Suzanne } from "./objects/suzanne";
+import { Camera } from "./camera";
+import { Cell } from "./cell";
+import { Scene } from "./scene";
+import { Suzanne } from "./suzanne";
 import { WebGpuRenderer } from "./renderer";
 
 const CELLS_DEBUG = false;

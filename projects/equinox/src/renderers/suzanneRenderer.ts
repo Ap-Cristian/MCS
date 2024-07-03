@@ -1,7 +1,7 @@
 import { Camera } from "../objects/camera";
 import { McsObject } from "../objects/object";
 import { Scene } from "../objects/scene";
-import { device } from "../renderer";
+import { device } from "../objects/renderer";
 import { Renderer } from "./rendererBase";
 
 export class SuzanneRenderer extends Renderer{

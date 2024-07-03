@@ -1,6 +1,6 @@
 import { CellShaderContainer } from "../containers/cell-shader.container";
 import { WireframeContainer } from "../containers/wireframe.container";
-import { device } from "../renderer";
+import { device } from "../objects/renderer";
 
 export class WireframeRenderPipeline{
     private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv

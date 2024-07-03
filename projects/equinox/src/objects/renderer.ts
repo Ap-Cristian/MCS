@@ -1,9 +1,9 @@
-import { Scene } from './objects/scene';
-import { Camera } from './objects/camera';
-import { FPSCounter } from './helpers/fpsCounter';
-import { CellRenderer } from './renderers/cellRenderer';
-import { SuzanneRenderer } from './renderers/suzanneRenderer';
-import { BoundingBoxRenderer } from './renderers/boundingBoxRenderer';
+import { Scene } from './scene';
+import { Camera } from './camera';
+import { FPSCounter } from '../helpers/fpsCounter';
+import { CellRenderer } from '../renderers/cellRenderer';
+import { SuzanneRenderer } from '../renderers/suzanneRenderer';
+import { BoundingBoxRenderer } from '../renderers/boundingBoxRenderer';
 
 export var device: GPUDevice;
 const FRAME_ERROR_PROBE_ONLY_ONCE:boolean = true;
