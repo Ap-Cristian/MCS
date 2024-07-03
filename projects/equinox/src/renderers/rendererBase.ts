@@ -1,5 +1,5 @@
-import { Camera } from "../objects/camera/camera";
-import { Scene } from "../objects/scene/scene";
+import { Camera } from "../objects/camera";
+import { Scene } from "../objects/scene";
 import { device } from "../renderer";
 
 export abstract class Renderer{

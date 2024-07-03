@@ -1,7 +1,7 @@
-import { Camera } from "../objects/camera/camera";
+import { Camera } from "../objects/camera";
 import { BoundingBox } from "../objects/gizmos/boundingBox";
 import { McsObject } from "../objects/object";
-import { Scene } from "../objects/scene/scene";
+import { Scene } from "../objects/scene";
 import { device } from "../renderer";
 import { Renderer } from "./rendererBase";
 

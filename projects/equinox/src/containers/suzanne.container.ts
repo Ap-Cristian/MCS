@@ -1,9 +1,9 @@
 
 import { SuzanneService } from "../services/suzanne-service";
-import { IContainer } from "./interfaces/IContainer";
-import { ISuzanneResponse } from "./interfaces/ISuzanneResponse";
-import { IFace } from "./interfaces/IFace";
-import { IVertex } from "./interfaces/IVertex";
+import { IContainer } from "../interfaces/IContainer";
+import { ISuzanneResponse } from "../interfaces/ISuzanneResponse";
+import { IFace } from "../interfaces/IFace";
+import { IVertex } from "../interfaces/IVertex";
 
 export class SuzanneContainer implements IContainer{
     public vertecies:IVertex[];

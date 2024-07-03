@@ -1,6 +1,6 @@
-import { Camera } from "../objects/camera/camera";
+import { Camera } from "../objects/camera";
 import { McsObject } from "../objects/object";
-import { Scene } from "../objects/scene/scene";
+import { Scene } from "../objects/scene";
 import { Renderer } from "./rendererBase";
 
 export class VoxelRenderer extends Renderer{

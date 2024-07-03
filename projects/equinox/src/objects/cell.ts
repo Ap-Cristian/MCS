@@ -1,8 +1,8 @@
-import { CellShaderContainer } from "../../containers/cell-shader.container";
-import { Color } from "../../misc/color";
-import { McsObjectParameters } from "../../misc/mcsObjectParameters";
-import { McsObject } from "../object";
-import { CellRenderPipeline } from "./cell.render.pipeline";
+import { CellShaderContainer } from "../containers/cell-shader.container";
+import { Color } from "../helpers/color";
+import { McsObjectParameters } from "../interfaces/IMcsObjectParameters";
+import { McsObject } from "./object";
+import { CellRenderPipeline } from "../render-pipelines/cell.render.pipeline";
 
 const DEBUG_DISABLE_CELL_LOGIC = false;
 

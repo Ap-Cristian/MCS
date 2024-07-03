@@ -1,5 +1,5 @@
-import { IVertex } from "../../containers/interfaces/IVertex";
-import { Color } from "../../misc/color";
+import { IVertex } from "../../interfaces/IVertex";
+import { Color } from "../../helpers/color";
 import { McsObject } from "../object";
 import { Gizmo } from "./gizmoBase";
 

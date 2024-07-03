@@ -1,5 +1,5 @@
 import { CellShaderService } from "../services/cell-shader-service";
-import { IVertex } from "./interfaces/IVertex";
+import { IVertex } from "../interfaces/IVertex";
 
 export class CellShaderContainer{
     public vertexCode:string;

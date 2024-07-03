@@ -1,8 +1,7 @@
 
-import { SuzanneService } from "../services/suzanne-service";
 import { WireframeService } from "../services/wireframe.service";
-import { IContainer } from "./interfaces/IContainer";
-import { IVertex } from "./interfaces/IVertex";
+import { IContainer } from "../interfaces/IContainer";
+import { IVertex } from "../interfaces/IVertex";
 
 export class WireframeContainer implements IContainer{
     private static instance:WireframeContainer;

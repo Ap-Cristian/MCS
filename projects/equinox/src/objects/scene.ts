@@ -1,8 +1,8 @@
 import { vec3 } from "gl-matrix";
-import { McsObject } from "../object";
-import { BoundingBox } from "../gizmos/boundingBox";
-import { Color } from "../../misc/color";
-import { Cell } from "../cell/cell";
+import { McsObject } from "./object";
+import { BoundingBox } from "./gizmos/boundingBox";
+import { Color } from "../helpers/color";
+import { Cell } from "./cell";
 
 export class Scene{
     private subject: McsObject | null;

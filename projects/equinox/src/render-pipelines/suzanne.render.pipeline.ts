@@ -1,30 +1,29 @@
-import { CellShaderContainer } from "../../containers/cell-shader.container";
-import { WireframeContainer } from "../../containers/wireframe.container";
-import { device } from "../../renderer";
+import { SuzanneContainer } from "../containers/suzanne.container";
+import { device } from "../renderer";
 
-export class WireframeRenderPipeline{
-    private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv
-    private stride:number = this.perVertex * 4;           // 4 bytes
-    private wireframeContainerInstance = WireframeContainer.getInstance();
-
+export class SuzanneRenderPipeline{
+    private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv, 3 for color
+    private stride:number = this.perVertex * 4; //4 bytes
+    private suzanneShaderContainer = SuzanneContainer.getInstance();
+    
     public Pipeline:GPURenderPipeline;
 
     private constructor(){
         if (device) {
-            var vertexShaderModule = device.createShaderModule({ code: this.wireframeContainerInstance.vertexCode });
-            var fragmentShaderModule = device.createShaderModule({ code: this.wireframeContainerInstance.fragmentCode });
+            var vertexShaderModule = device.createShaderModule({ code: this.suzanneShaderContainer.vertexCode });
+            var fragmentShaderModule = device.createShaderModule({ code: this.suzanneShaderContainer.fragmentCode });
 
             var vertexCompilationInfo = vertexShaderModule.getCompilationInfo();
             var fragmentCompilationInfo = fragmentShaderModule.getCompilationInfo();
 
             vertexCompilationInfo.then((info)=>{
-                console.log("Vertex shader compilation complaints should appear after this ------")
+                console.log("Suzanne vertex shader compilation complaints should appear after this ------")
                 info.messages.forEach((message)=>{
                   console.error(message);
                 })
             });
             fragmentCompilationInfo.then((info)=>{
-                console.log("Fragment shader compilation complaints should appear after this ------")
+                console.log("Suzanne fragment shader compilation complaints should appear after this ------")
                 info.messages.forEach((message)=>{
                   console.error(message);
                 })
@@ -63,7 +62,7 @@ export class WireframeRenderPipeline{
                   ],
                 } as GPUFragmentState,
                 primitive: {
-                  topology: 'line-list',
+                  topology: 'triangle-list',
                   cullMode: 'back',
                 },
                 depthStencil: {
@@ -79,12 +78,12 @@ export class WireframeRenderPipeline{
         
     }
 
-    public static instance:WireframeRenderPipeline;
-    public static GetInstance():WireframeRenderPipeline{
+    public static instance:SuzanneRenderPipeline;
+    public static GetInstance():SuzanneRenderPipeline{
         if(this.instance != null){
             return this.instance;
         }
-        this.instance = new WireframeRenderPipeline();
+        this.instance = new SuzanneRenderPipeline();
         return this.instance;
     }
 }

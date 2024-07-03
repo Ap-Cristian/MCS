@@ -1,13 +1,11 @@
-import { Scene } from './objects/scene/scene';
-import { Camera } from './objects/camera/camera';
-import { FpsCounter } from './misc/fpsCounter/FPSCoutner';
+import { Scene } from './objects/scene';
+import { Camera } from './objects/camera';
+import { FPSCounter } from './helpers/fpsCounter';
 import { CellRenderer } from './renderers/cellRenderer';
 import { SuzanneRenderer } from './renderers/suzanneRenderer';
 import { BoundingBoxRenderer } from './renderers/boundingBoxRenderer';
-import { BoundingBox } from './objects/gizmos/boundingBox';
 
 export var device: GPUDevice;
-
 const FRAME_ERROR_PROBE_ONLY_ONCE:boolean = true;
 
 export class WebGpuRenderer {
@@ -24,10 +22,9 @@ export class WebGpuRenderer {
     
     private frameErrorProbed:boolean = false;
     private renderPassColorAttachment: GPURenderPassColorAttachment;
-    private fpsCounter:FpsCounter = new FpsCounter();
+    private fpsCounter:FPSCounter = new FPSCounter();
 
     constructor() {
-        // this.cell_shaderContainer = CellShaderContainer.getInstance();
     }
 
     public async init(canvas: HTMLCanvasElement): Promise<boolean> {

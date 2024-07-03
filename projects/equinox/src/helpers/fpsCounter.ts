@@ -1,4 +1,4 @@
-export class FpsCounter{
+export class FPSCounter{
     private lastCalledTime:number;
     private delta:number;
 
