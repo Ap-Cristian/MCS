@@ -7,7 +7,6 @@ export class ObjFileParser{
     private objectIdentifier = '';
     private vertecies:IVertex[] = [];
     private faces:IFace[] = [];
-    
 
     private pathOBJ:string = '';
     private pathMTL:string = '';
@@ -41,6 +40,7 @@ export class ObjFileParser{
 
             switch (lineSplitRes[0]){
                 case 'mtllib':
+                case 'usemtl':
                     this.mtlFileName = lineSplitRes[1];
                     break;
                 case 'o':
@@ -81,7 +81,7 @@ export class ObjFileParser{
                     this.faces.push(currentFace);
                     break;
                 default:
-                    console.log("[!!!] Invalid OBJ file attempted to parse or untreated line starting!\n");
+                    console.log("[!!!] Invalid OBJ file attempted to parse or untreated line beggining!\n");
                     console.log(lineSplitRes[0]);
                     break;
             }

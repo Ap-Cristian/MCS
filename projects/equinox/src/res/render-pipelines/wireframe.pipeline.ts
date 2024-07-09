@@ -1,5 +1,5 @@
 import { WireframeShaderResources } from "../wireframe.res";
-import { device } from "../../objects/renderer";
+import { device } from "../../objects/rendererMain";
 
 export class WireframeRenderPipeline{
     private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv

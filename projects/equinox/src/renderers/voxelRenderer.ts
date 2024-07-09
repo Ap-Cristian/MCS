@@ -1,5 +1,5 @@
 import { Camera } from "../objects/camera";
-import { McsObject } from "../base-classes/object";
+import { McsObject } from "../base-classes/objectBase";
 import { Scene } from "../objects/scene";
 import { Renderer } from "../base-classes/rendererBase";
 
@@ -14,7 +14,7 @@ export class VoxelRenderer extends Renderer{
     }
 
     private findBoundingBoxVertecies(): void{
-        var objectVertecies = this.mainObject.VertexArray;
+        var objectVertecies = this.mainObject.Drawable.VertexArray;
         
         for(var i = 0; i < objectVertecies.length; i++){
             // console.log(objectVertecies[i].pos + ' ');

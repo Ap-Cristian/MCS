@@ -150,7 +150,6 @@ export class WebGpuRenderer {
                     this.frameErrorProbed = true;
             })
         }
-
         this.fpsCounter.frame();
     }
 

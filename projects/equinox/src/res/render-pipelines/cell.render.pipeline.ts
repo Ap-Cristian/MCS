@@ -1,5 +1,5 @@
 import { CellShaderResources } from "../cell.res";
-import { device } from "../../objects/renderer";
+import { device } from "../../objects/rendererMain";
 
 export class CellRenderPipeline{
     private readonly perVertex:number = (3 + 3 + 2);      // 3 for position, 2 for uv, 3 for color

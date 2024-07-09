@@ -1,6 +1,6 @@
 import { Camera } from "../objects/camera";
 import { Scene } from "../objects/scene";
-import { device } from "../objects/renderer";
+import { device } from "../objects/rendererMain";
 
 export abstract class Renderer{
     private readonly floatsPerVertex:number = (4 + 4 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color

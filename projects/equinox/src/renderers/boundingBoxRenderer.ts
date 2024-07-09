@@ -1,8 +1,8 @@
 import { Camera } from "../objects/camera";
 import { BoundingBox } from "../objects/gizmos/boundingBox";
-import { McsObject } from "../base-classes/object";
+import { McsObject } from "../base-classes/objectBase";
 import { Scene } from "../objects/scene";
-import { device } from "../objects/renderer";
+import { device } from "../objects/rendererMain";
 import { Renderer } from "../base-classes/rendererBase";
 
 export class BoundingBoxRenderer extends Renderer{
@@ -24,7 +24,7 @@ export class BoundingBoxRenderer extends Renderer{
 
     initUniforms(scene: Scene, camera: Camera): void {
         this.parent = scene.Subject;
-        this.boundingBox = scene.SubjectBoundingBox;
+        this.boundingBox = scene.Subject.BoundingBox;
 
         if(!this.frameErrorProbed){
             device.pushErrorScope("validation")
@@ -33,15 +33,15 @@ export class BoundingBoxRenderer extends Renderer{
         }
 
         this.boundingBox_positionUB = device.createBuffer({
-            size: this.parent.GPUPosArray.length * Float32Array.BYTES_PER_ELEMENT,
+            size: this.parent.Position.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         })
         this.boundingBox_rotationUB = device.createBuffer({
-            size: this.parent.GPURotArray.length * Float32Array.BYTES_PER_ELEMENT,
+            size: this.parent.Rotation.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         })
         this.boundingBox_scaleUB = device.createBuffer({
-            size: this.parent.GPUScaleArray.length * Float32Array.BYTES_PER_ELEMENT,
+            size: this.parent.Scale.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         })
 
@@ -73,7 +73,7 @@ export class BoundingBoxRenderer extends Renderer{
         ];
 
         this.boundingBox_uniformBindGroup = device.createBindGroup({
-            layout: this.boundingBox.RenderPipeline.getBindGroupLayout(0),
+            layout: this.boundingBox.Drawable.RenderPipeline.getBindGroupLayout(0),
             entries: uniformBindGroupEntries
         });
         this.boundingBox_verticesBuffer = device.createBuffer({
@@ -127,23 +127,23 @@ export class BoundingBoxRenderer extends Renderer{
         device.queue.writeBuffer(
             this.boundingBox_positionUB,
             0,
-            this.parent.GPUPosArray.buffer,
-            this.parent.GPUPosArray.byteOffset,
-            this.parent.GPUPosArray.byteLength 
+            this.parent.Position.buffer,
+            this.parent.Position.byteOffset,
+            this.parent.Position.byteLength 
         );
         device.queue.writeBuffer(
             this.boundingBox_rotationUB,
             0,
-            this.parent.GPURotArray.buffer,
-            this.parent.GPURotArray.byteOffset,
-            this.parent.GPURotArray.byteLength 
+            this.parent.Rotation.buffer,
+            this.parent.Rotation.byteOffset,
+            this.parent.Rotation.byteLength 
         );
         device.queue.writeBuffer(
             this.boundingBox_scaleUB,
             0,
-            this.parent.GPUScaleArray.buffer,
-            this.parent.GPUScaleArray.byteOffset,
-            this.parent.GPUScaleArray.byteLength 
+            this.parent.Scale.buffer,
+            this.parent.Scale.byteOffset,
+            this.parent.Scale.byteLength 
         );
 
         device.queue.writeBuffer(
@@ -163,7 +163,7 @@ export class BoundingBoxRenderer extends Renderer{
         )
 
         passEncoder.setVertexBuffer(0, this.boundingBox_verticesBuffer);
-        passEncoder.setPipeline(this.boundingBox.RenderPipeline);
+        passEncoder.setPipeline(this.boundingBox.Drawable.RenderPipeline);
         passEncoder.setBindGroup(0, this.boundingBox_uniformBindGroup);
         passEncoder.setIndexBuffer(this.boundingBox_indexBuffer, "uint32");
         passEncoder.drawIndexed(this.boundingBox.FaceIndexData.length, 1, 0, 0, 0);

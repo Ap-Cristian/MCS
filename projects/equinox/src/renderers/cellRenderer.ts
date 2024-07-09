@@ -2,7 +2,7 @@ import { CellShaderResources } from "../res/cell.res";
 import { Camera } from "../objects/camera";
 import { CellRenderPipeline } from "../res/render-pipelines/cell.render.pipeline";
 import { Scene } from "../objects/scene";
-import { device } from "../objects/renderer";
+import { device } from "../objects/rendererMain";
 import { Renderer } from "../base-classes/rendererBase";
 
 export class CellRenderer extends Renderer{
@@ -30,7 +30,6 @@ export class CellRenderer extends Renderer{
     initUniforms(scene: Scene, camera: Camera): void {
         this.NUMBER_OF_CELLS = scene.Objects.length; 
         
-        console.log(scene);
         if(!this.frameErrorProbed){
             device.pushErrorScope("validation")
             device.pushErrorScope("out-of-memory")
@@ -59,9 +58,6 @@ export class CellRenderer extends Renderer{
             this.cell_scaleArray[currentMemOffset]    = objects[i].ScaleZ;
             currentMemOffset++;
         }
-
-        console.log("DEV_VIDEO_MAX_BUFFER_MEM_SIZE: ", device.limits.maxBufferSize)
-        console.log("DEV_VIDEO_MAX_UNIFORM_MEM_SIZE: ", device.limits.maxUniformBufferBindingSize)
 
         this.cell_positionBuffer = device.createBuffer({
             size: Float32Array.BYTES_PER_ELEMENT * 3 * this.NUMBER_OF_CELLS < 16 ? 

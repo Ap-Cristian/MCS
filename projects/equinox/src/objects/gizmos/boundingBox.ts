@@ -1,12 +1,9 @@
 import { IVertex } from "../../res/interfaces/IVertex";
 import { Color } from "../color";
-import { McsObject } from "../../base-classes/object";
+import { McsObject } from "../../base-classes/objectBase";
 import { Gizmo } from "../../base-classes/gizmoBase";
 
 export class BoundingBox extends Gizmo{
-    public Color:Color;
-    public Parent: McsObject;
-
     public FaceIndexData: Uint32Array = new Uint32Array([
         // back
         0, 6, 
@@ -29,10 +26,10 @@ export class BoundingBox extends Gizmo{
     public BottomVertecies:IVertex[];
 
     public get Vertecies(): IVertex[]{
-        if(!this.VertexArray)
+        if(!this.Drawable.VertexArray)
             this.findBoundingBoxVertexCoordinates();
 
-        return this.VertexArray;
+        return this.Drawable.VertexArray;
     }
 
     private findBoundingBoxVertexCoordinates(): void{
@@ -48,7 +45,7 @@ export class BoundingBox extends Gizmo{
                 uv:[0,0,0]
             };
 
-            this.Parent.VertexArray.forEach((vertex)=>{
+            this.Parent.Drawable.VertexArray.forEach((vertex)=>{
                 vertex.pos[0] < v0.pos[0] ? v0.pos[0] = vertex.pos[0] : null;
                 vertex.pos[1] < v0.pos[1] ? v0.pos[1] = vertex.pos[1] : null;    
                 vertex.pos[2] < v0.pos[2] ? v0.pos[2] = vertex.pos[2] : null;    
@@ -98,7 +95,7 @@ export class BoundingBox extends Gizmo{
             v4.pos = [v0.pos[0],    v7.pos[1],      v7.pos[2]]; //top
             v6.pos = [v0.pos[0],    v7.pos[1],      v0.pos[2]]; //top
 
-            this.VertexArray = [v0, v1, v2, v3, v4, v5, v6, v7];
+            this.Drawable.VertexArray = [v0, v1, v2, v3, v4, v5, v6, v7];
 
             this.TopVertecies = [v6,v3,v4,v7]; //ordered left to right
             this.BottomVertecies = [v0,v2,v5,v1];

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { APP_ENV } from '../../app-module/app-env';
 import { sendCellRefreshSignal } from '../../app-module/app-ws';
+import { getCurrentDateAndTimeToString } from '../../misc/time';
 
 const CELL_SHADER_PATH = "../../shaders/";
 const CELL_FRAGMENT_SHADER = "cell.fragment.wgsl";
@@ -24,21 +25,24 @@ let vertexPath_suzanne = path.join(__dirname, SUZANNE_SHADER_PATH + SUZANNE_VERT
 let fragmentPath_boundingBox = path.join(__dirname, BOUNDINGBOX_SHADER_PATH + BOUNDIGNBOX_FRAGMENT_SHADER)
 let vertexPath_boundingBox = path.join(__dirname, BOUNDINGBOX_SHADER_PATH + BOUNDINGBOX_VERTEX_SHADER)
 
-export class cellWatcher{
-    private static onShaderChanged(curr:any,prev:any){
-        console.log("Cell shader changed! Sending signal to client...")
+export class cellWatcher {
+    private static onShaderChanged(curr: any, prev: any) {
+        console.log(`[${getCurrentDateAndTimeToString()}][${APP_ENV.APP_NAME}]` +
+            `Cell shader changed! Sending signal to client...`);
         sendCellRefreshSignal();
     }
 
-    static startWatching():void{
-        console.log(`[${APP_ENV.APP_NAME}] Watching for shader file changes...`);
-        fs.watchFile(fragmentPath_cell,{ interval: 1000 }, this.onShaderChanged);
-        fs.watchFile(vertexPath_cell,{ interval: 1000 }, this.onShaderChanged);
+    static startWatching(): void {
+        console.log(`[${getCurrentDateAndTimeToString()}][${APP_ENV.APP_NAME}]` +
+            ` Watching for shader file changes`);
+            
+        fs.watchFile(fragmentPath_cell, { interval: 1000 }, this.onShaderChanged);
+        fs.watchFile(vertexPath_cell, { interval: 1000 }, this.onShaderChanged);
 
-        fs.watchFile(fragmentPath_suzanne,{ interval: 1000 }, this.onShaderChanged);
-        fs.watchFile(vertexPath_suzanne,{ interval: 1000 }, this.onShaderChanged);
-        
-        fs.watchFile(fragmentPath_boundingBox,{ interval: 1000 }, this.onShaderChanged);
-        fs.watchFile(vertexPath_boundingBox,{ interval: 1000 }, this.onShaderChanged);
+        fs.watchFile(fragmentPath_suzanne, { interval: 1000 }, this.onShaderChanged);
+        fs.watchFile(vertexPath_suzanne, { interval: 1000 }, this.onShaderChanged);
+
+        fs.watchFile(fragmentPath_boundingBox, { interval: 1000 }, this.onShaderChanged);
+        fs.watchFile(vertexPath_boundingBox, { interval: 1000 }, this.onShaderChanged);
     }
 }

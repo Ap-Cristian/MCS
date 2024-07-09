@@ -2,10 +2,11 @@ import { Camera } from "./camera";
 import { Cell } from "./cell";
 import { Scene } from "./scene";
 import { Suzanne } from "./suzanne";
-import { WebGpuRenderer } from "./renderer";
+import { WebGpuRenderer } from "./rendererMain";
+import { InputHandler } from "./inputHandler";
 
 const CELLS_DEBUG = false;
-export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 10 : 0;
+export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 50 : 0;
 export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW ** 3; 
 
 export class Engine{
@@ -13,6 +14,7 @@ export class Engine{
     private mainRenderer:WebGpuRenderer;
     private mainCam:Camera;
     private mainScene:Scene;
+    private inputHandler:InputHandler;
 
     private resizeContextToWindow():void {
         if(this.htmlCanvas){
@@ -48,6 +50,7 @@ export class Engine{
                 
                 this.mainCam = new Camera(this.htmlCanvas.width / this.htmlCanvas.height);
                 this.mainCam.Z = 10;
+                this.inputHandler = new InputHandler();
 
                 this.mainScene = new Scene();
 
@@ -55,14 +58,12 @@ export class Engine{
                 var currentX:number = 0;
                 var currentY:number = 0;
                 var currentZ:number = 0;
-
                 console.log("Number of cells to be instantiated:", NUMBER_OF_CELLS);
-
                 var cellsCount = 0;
                 for(var i = 0; i < NUMBER_OF_CELLS_ON_ROW; i++){
                     for(var j = 0; j < NUMBER_OF_CELLS_ON_ROW; j++){
                          for(var k = 0; k < NUMBER_OF_CELLS_ON_ROW; k++){
-                            this.mainScene.add(new Cell({X:currentX, Y:currentY, Z:currentZ}));
+                            this.mainScene.add(new Cell({X:currentX, Y:currentY, Z:currentZ, ScaleX:0.5,ScaleY:0.5,ScaleZ:0.5}));
                             currentX += 2;
                             cellsCount++;
                          }
@@ -75,89 +76,41 @@ export class Engine{
 
                 this.mainScene.Subject = new Suzanne({X:0, Y:0, Z:0});
 
-                // this.mainCam.lookAt = this.mainScene.getObjects()[0].Transform;
-                console.log("Instanciated", cellsCount, "cells!");
                 //performance probe
+                console.log("Instanciated", cellsCount, "cells!");
                 var time2 = new Date();
                 var dtime = time2.getMilliseconds() - time1.getMilliseconds();
                 console.log("Cell init took:", dtime, "ms\n");
                 //
-                
                 this.mainRenderer.InitUBOs(this.mainScene, this.mainCam);
-                
-                const doFrame = () => {
-                    this.mainRenderer.updateMain(this.htmlCanvas);
-                    this.mainRenderer.frameMain(this.mainCam, this.mainScene);
-                    requestAnimationFrame(doFrame);
-                };
-                //"That synchronization is taken care of by the requestAnimationFrame() method that is used to implement the animation."
-                requestAnimationFrame(doFrame); //used in order to sync CPU with GPU
 
-                this.htmlCanvas.onwheel = (event: WheelEvent) => {
-                    const wheelSpeed = event.deltaY / 5000;
-                    if(this.mainCam.fovy > 0.01 && wheelSpeed < 0){
-                        this.mainCam.fovy += wheelSpeed;
-                    }else if(this.mainCam.fovy <= 0.01){
-                        this.mainCam.Z += wheelSpeed;
-                    }
-                    if(wheelSpeed > 0 && this.mainCam.fovy <= 1){
-                        this.mainCam.fovy += wheelSpeed;
-                    }else if(wheelSpeed > 0 && this.mainCam.fovy > 1){
-                        this.mainCam.Z += wheelSpeed * 10;
-                    }
-                }
-
-                var shiftPressed:boolean = false;
-                window.onkeydown = (event: KeyboardEvent) =>{
-                    if(event.key == "Shift"){
-                        shiftPressed = true;
-                    }
-                }
-
-                window.onkeyup = (event: KeyboardEvent) =>{
-                    if(event.key == "Shift"){
-                        shiftPressed = false;
-                    }
-                }
-
-                // MOUSE DRAG
-                var mouseDown = false;
-                this.htmlCanvas.onmousedown = (event: MouseEvent) => {
-                    mouseDown = true;
-                
-                    lastMouseX = event.pageX;
-                    lastMouseY = event.pageY;
-                }
-                this.htmlCanvas.onmouseup = (event: MouseEvent) => {
-                    mouseDown = false;
-                }
-                var lastMouseX= -1; 
-                var lastMouseY= -1;
-                this.htmlCanvas.onmousemove = (event: MouseEvent) => {
-                    if (!mouseDown) {
-                        return;
-                    }
-                
-                    var mousex = event.pageX;
-                    var mousey = event.pageY;
-                
-                    if (lastMouseX > 0 && lastMouseY > 0) {
-                        const mouseDeltaX = mousex - lastMouseX;
-                        const mouseDeltaY = mousey - lastMouseY;
-
-                        if(!shiftPressed){
-                            this.mainCam.rotY += mouseDeltaX / 100;
-                            this.mainCam.rotX += mouseDeltaY / 100;
-                        }else{
-                            this.mainCam.X += mouseDeltaX / 100;
-                            this.mainCam.Y += mouseDeltaY / 100;
-                            // this.mainCam.lookAt = vec3.fromValues(this.mainCam.lookAt[0] + mouseDeltaX, this.mainCam.lookAt[1] - mouseDeltaY, this.mainCam.lookAt[2]);
-                        }
-                    }
-                    lastMouseX = mousex;
-                    lastMouseY = mousey;
-                }
+                this.InitInputHandlingCallbacks();
+                this.InitMainRenderingLoop();
             });
         }
+    }
+
+    private InitInputHandlingCallbacks(){
+        const mouseMoveHandlerBind = this.inputHandler.mouseMoveInputHandler.bind(this.inputHandler, this.mainCam);
+        const mouseHandlerBind = this.inputHandler.mouseWheelHandle.bind(this.inputHandler,this.mainCam);
+        const mouseClickHandlerBind = this.inputHandler.mouseClickInputHandler.bind(this.inputHandler);
+        const keyboardHandlerBind = this.inputHandler.keyboardInputHandler.bind(this.inputHandler);
+
+        this.htmlCanvas.onwheel = mouseHandlerBind;
+        this.htmlCanvas.onmousedown = mouseClickHandlerBind;
+        this.htmlCanvas.onmouseup = mouseClickHandlerBind;
+        this.htmlCanvas.onmousemove = mouseMoveHandlerBind;
+
+        window.onkeydown = keyboardHandlerBind;
+        window.onkeyup = keyboardHandlerBind;
+    }
+
+    private InitMainRenderingLoop(){
+        const doFrame = () => {
+            this.mainRenderer.updateMain(this.htmlCanvas);
+            this.mainRenderer.frameMain(this.mainCam, this.mainScene);
+            requestAnimationFrame(doFrame);
+        };
+        requestAnimationFrame(doFrame);
     }
 }

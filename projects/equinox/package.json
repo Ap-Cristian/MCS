@@ -14,10 +14,10 @@
     "watch": "webpack --watch"
   },
   "keywords": [
-    "eutectic",
-    "metals",
+    "metal",
     "cooling",
-    "simulation"
+    "simulation",
+    "engine"
   ],
   "author": "Apetroaie Cristian",
   "license": "ISC",

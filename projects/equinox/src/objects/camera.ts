@@ -15,21 +15,20 @@ export class Camera{
     public near: number = 0.1;
     public far: number = 1000;
 
-    public lookAt: vec3 = vec3.fromValues(0, 0, 0);
+    public LookAt: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor (aspect: number) {
         this.aspect = aspect;
     }
-
     
     public getViewMatrix () : mat4 {
         let viewMatrix = mat4.create();
-
-        mat4.lookAt(viewMatrix, vec3.fromValues(this.X, this.Y, this.Z), this.lookAt, vec3.fromValues(0, 1, 0));
+        mat4.lookAt(viewMatrix, vec3.fromValues(this.X, this.Y, this.Z), this.LookAt, vec3.fromValues(0, 1, 0));
 
         mat4.rotateX(viewMatrix, viewMatrix, this.rotX);
         mat4.rotateY(viewMatrix, viewMatrix, this.rotY);
         mat4.rotateZ(viewMatrix, viewMatrix, this.rotZ);
+
         return viewMatrix;
     }
 
