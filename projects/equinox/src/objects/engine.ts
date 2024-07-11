@@ -6,49 +6,55 @@ import { WebGpuRenderer } from "./rendererMain";
 import { InputHandler } from "./inputHandler";
 
 const CELLS_DEBUG = false;
-export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 50 : 0;
+export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 10 : 0;
 export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW ** 3; 
 
 export class Engine{
-    private htmlCanvas:HTMLCanvasElement;
+    private webGPUCanvas:HTMLCanvasElement;
+    private frameRateCanvas:HTMLCanvasElement;
+    private canvases:HTMLCanvasElement[] = new Array<HTMLCanvasElement>(); // 0 - WebGPU - canvas, 1 - framerate canvas
+
     private mainRenderer:WebGpuRenderer;
     private mainCam:Camera;
     private mainScene:Scene;
     private inputHandler:InputHandler;
 
     private resizeContextToWindow():void {
-        if(this.htmlCanvas){
-            console.log("[DEBUG] Window resized, updating...");
-            this.htmlCanvas.width = window.innerWidth;
-            this.htmlCanvas.height = window.innerHeight;
+        if(this.webGPUCanvas){
+            console.log("[DEBUG] Window resized, updating...");2
+            this.webGPUCanvas.width = window.innerWidth;
+            this.webGPUCanvas.height = window.innerHeight;
             
-            this.mainCam.aspect = this.htmlCanvas.width / this.htmlCanvas.height;
-            this.mainRenderer.updateMain(this.htmlCanvas);
+            this.mainCam.aspect = this.webGPUCanvas.width / this.webGPUCanvas.height;
+            this.mainRenderer.updateMain(this.webGPUCanvas);
             if(this.mainRenderer){
-                this.mainRenderer.UpdateRenderPassDescriptor(this.htmlCanvas);
+                this.mainRenderer.UpdateRenderPassDescriptor(this.webGPUCanvas);
             }
         }
     }
 
     constructor(){
-        this.htmlCanvas = document.querySelector('canvas')
+        this.webGPUCanvas = document.getElementById('webGpu-context') as HTMLCanvasElement;
+        this.frameRateCanvas = document.getElementById('framerate-context') as HTMLCanvasElement;
 
-        if (this.htmlCanvas) {
-            this.htmlCanvas.width = window.innerWidth
-            this.htmlCanvas.height = window.innerHeight
+        this.canvases = this.canvases.concat([this.webGPUCanvas, this.frameRateCanvas]);
 
+        if (this.webGPUCanvas) {
+            this.webGPUCanvas.width = window.innerWidth;
+            this.webGPUCanvas.height = window.innerHeight;
+            
             addEventListener("resize", ()=>{
                 this.resizeContextToWindow();
             });
 
             this.mainRenderer = new WebGpuRenderer();
-            this.mainRenderer.init(this.htmlCanvas).then((success)=>{
+            this.mainRenderer.init(this.canvases).then((success)=>{
                 if(!success){ 
                     console.error("[ERR] Failed to init main renderer, exiting...");
                     return;
                 }
                 
-                this.mainCam = new Camera(this.htmlCanvas.width / this.htmlCanvas.height);
+                this.mainCam = new Camera(this.webGPUCanvas.width / this.webGPUCanvas.height);
                 this.mainCam.Z = 10;
                 this.inputHandler = new InputHandler();
 
@@ -96,10 +102,10 @@ export class Engine{
         const mouseClickHandlerBind = this.inputHandler.mouseClickInputHandler.bind(this.inputHandler);
         const keyboardHandlerBind = this.inputHandler.keyboardInputHandler.bind(this.inputHandler);
 
-        this.htmlCanvas.onwheel = mouseHandlerBind;
-        this.htmlCanvas.onmousedown = mouseClickHandlerBind;
-        this.htmlCanvas.onmouseup = mouseClickHandlerBind;
-        this.htmlCanvas.onmousemove = mouseMoveHandlerBind;
+        this.webGPUCanvas.onwheel = mouseHandlerBind;
+        this.webGPUCanvas.onmousedown = mouseClickHandlerBind;
+        this.webGPUCanvas.onmouseup = mouseClickHandlerBind;
+        this.webGPUCanvas.onmousemove = mouseMoveHandlerBind;
 
         window.onkeydown = keyboardHandlerBind;
         window.onkeyup = keyboardHandlerBind;
@@ -107,7 +113,7 @@ export class Engine{
 
     private InitMainRenderingLoop(){
         const doFrame = () => {
-            this.mainRenderer.updateMain(this.htmlCanvas);
+            this.mainRenderer.updateMain(this.webGPUCanvas);
             this.mainRenderer.frameMain(this.mainCam, this.mainScene);
             requestAnimationFrame(doFrame);
         };

@@ -13,7 +13,10 @@ export class WebGpuRenderer {
 
     private renderPassDescriptor:       GPURenderPassDescriptor;
     private presentationFormat:         GPUTextureFormat;
-    private context:                    GPUCanvasContext;
+
+    private canvasLayers:               HTMLCanvasElement[]; // 0 - WebGPU - canvas, 1 - framerate canvas
+    private webgpuContext:              GPUCanvasContext;
+    private framerateContext:           CanvasRenderingContext2D
 
     private cellRenderer:CellRenderer;
     private suzanneRenderer:SuzanneRenderer;
@@ -27,9 +30,9 @@ export class WebGpuRenderer {
     constructor() {
     }
 
-    public async init(canvas: HTMLCanvasElement): Promise<boolean> {
-        if (!canvas) {
-            console.log('missing canvas!')
+    public async init(canvasLayers: HTMLCanvasElement[]): Promise<boolean> {
+        if (canvasLayers.length == 0) {
+            console.log('missing canvases!')
             return false;
         }
 
@@ -41,9 +44,16 @@ export class WebGpuRenderer {
             return false;
         }
 
-        this.context = (canvas.getContext('webgpu') as unknown) as GPUCanvasContext;
+        this.webgpuContext = (canvasLayers[0].getContext('webgpu') as unknown) as GPUCanvasContext;
+        this.framerateContext = (canvasLayers[1].getContext('2d') as unknown) as CanvasRenderingContext2D;
+        this.canvasLayers = canvasLayers;
+
+        this.initFramerateFont();
+        
         this.presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-        this.context.configure({
+
+        
+        this.webgpuContext.configure({
             device,
             format: this.presentationFormat,
             alphaMode: 'premultiplied',
@@ -61,7 +71,7 @@ export class WebGpuRenderer {
               },
             ],
             depthStencilAttachment: {
-              view: this.depthTextureView(canvas),
+              view: this.depthTextureView(canvasLayers[0]),
               depthLoadOp: 'clear',
               depthClearValue: 1.0,
               depthStoreOp: 'store',
@@ -116,7 +126,7 @@ export class WebGpuRenderer {
         }
         
         this.cameraProjectionArray.set(camera.getCameraViewProjMatrix(), 0);
-        var gpuCurrentTexture = this.context.getCurrentTexture();
+        var gpuCurrentTexture = this.webgpuContext.getCurrentTexture();
         this.renderPassColorAttachment.view = gpuCurrentTexture.createView();
 
         const commandEncoder = device.createCommandEncoder();
@@ -151,6 +161,7 @@ export class WebGpuRenderer {
             })
         }
         this.fpsCounter.frame();
+        this.updateFramerateText(this.fpsCounter.Fps.toFixed(0));
     }
 
     private depthTextureView(canvas: HTMLCanvasElement) {
@@ -162,6 +173,21 @@ export class WebGpuRenderer {
             format: 'depth24plus-stencil8',
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
         }).createView();
+    }
+
+    private updateFramerateText(newValue:string){
+        this.framerateContext.clearRect(0,0,this.canvasLayers[1].width, this.canvasLayers[1].height); //clear
+        this.framerateContext.fillText(newValue + " FPS", 0, 0);
+    }
+
+    private initFramerateFont(){
+        this.canvasLayers[1].height = 24;
+
+        this.framerateContext.font = '24px monospace';
+        this.framerateContext.textBaseline = 'top';
+        this.framerateContext.textAlign = 'left';
+        this.framerateContext.fillStyle = 'white';
+        this.framerateContext.fillText("", 55, 25);
     }
 
     public UpdateRenderPassDescriptor(canvas: HTMLCanvasElement) {
