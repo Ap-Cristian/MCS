@@ -1,5 +1,5 @@
 {
-  "name": "vtx-eng",
+  "name": "MCS-eng",
   "version": "1.0.0",
   "description": "Simulator for molten metals temperature zones",
   "main": "index.ts",
@@ -14,10 +14,10 @@
     "watch": "webpack --watch"
   },
   "keywords": [
-    "eutectic",
-    "metals",
+    "metal",
     "cooling",
-    "simulation"
+    "simulation",
+    "engine"
   ],
   "author": "Apetroaie Cristian",
   "license": "ISC",

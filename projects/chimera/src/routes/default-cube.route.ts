@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { getCellVertexArray, loadCellVertexShader, loadCellFragmentShader } from '../services/default-cube.service';
+import { getCurrentDateAndTimeToString } from '../misc/time';
 
 export const CellRouter = Router();
 
@@ -16,7 +17,7 @@ CellRouter.get(CELL_VERTEX_SHADER_ENDPOINT,
             res.header(CORS_HEADER, '*');
 
         }catch(ex){
-            console.log("[DEBUG] ERR: loading CELL VERTEX SHADER failed ");
+            console.log(`[${getCurrentDateAndTimeToString()}][DEBUG] ERR: loading CELL VERTEX SHADER failed `, ex);
             return res.end(ex);
     
         }
@@ -32,7 +33,8 @@ CellRouter.get(CELL_FRAGMENT_SHADER_ENDPOINT,
             defaultCubeVertex = loadCellFragmentShader();
             res.header(CORS_HEADER,'*');
         }catch(ex){
-            console.log("[DEBUG] ERR: loading CELL FRAGMENT SHADER failed ");
+            console.log(`[${getCurrentDateAndTimeToString()}][DEBUG] ERR: loading CELL FRAGMENT SHADER failed: `,ex);
+            res.statusCode = 500;
             return res.end(ex);
         }
         return res.end(defaultCubeVertex);
@@ -47,7 +49,8 @@ CellRouter.get(CELL_MESH_VERTEX_ARRAY,
             defaultCubeMeshVertexArray = getCellVertexArray();
             res.header(CORS_HEADER,'*');
         }catch(ex){
-            console.log("[DEBUG] ERR: loading CELL VERTEX ARRAY failed ");
+            console.log(`[${getCurrentDateAndTimeToString()}][DEBUG] ERR: loading CELL VERTEX ARRAY failed `, ex);
+            res.statusCode = 500;
             return res.end(ex);
         }
         return res.end(defaultCubeMeshVertexArray);

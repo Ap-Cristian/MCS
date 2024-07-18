@@ -13,7 +13,7 @@ const config = {
         path: path.resolve(__dirname, 'dist'),
     },
     devServer: {
-        open: false,
+        open: true,
         host: 'localhost',
     },
     plugins: [

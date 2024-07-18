@@ -1,13 +1,3 @@
-fn scaleColumnMatrix(scaleValues:vec3f, vertPos:vec4f) -> vec4f{
-  var scaleMatrix = mat4x4<f32>(
-    vec4(scaleValues.x,        0,               0,       0),
-    vec4(0,              scaleValues.y,         0,       0),
-    vec4(0,                     0,       scaleValues.z,  0),
-    vec4(0,                     0,               0,      1)
-  );
-  return scaleMatrix * vertPos;
-}
-
 fn translateMatrix(translation: vec3f) -> mat4x4<f32> {
     return mat4x4<f32>(
         vec4(1.0, 0.0, 0.0, 0.0),
@@ -119,21 +109,19 @@ fn rotateZ(m:mat4x4<f32>, angleInRadians:f32) -> mat4x4<f32>{
   return res;
 }
 
-struct CellPositions {
-  position: array<f32>,
-};
+fn scaleColumnMatrix(scaleValues:vec3f, vertPos:vec4f) -> vec4f{
+  var scaleMatrix = mat4x4<f32>(
+    vec4(scaleValues.x,        0,               0,       0),
+    vec4(0,              scaleValues.y,         0,       0),
+    vec4(0,                     0,       scaleValues.z,  0),
+    vec4(0,                     0,               0,      1)
+  );
+  return scaleMatrix * vertPos;
+}
 
-struct CellScales {
-  scale: array<f32>,
-};
-
-struct CellRotations {
-  rotation: array<f32>,
-};
-
-@group(0) @binding(0) var<storage, read> cellsRotation :        CellRotations;
-@group(0) @binding(1) var<storage, read> cellsPositions :       CellPositions;
-@group(0) @binding(2) var<storage, read> cellsScales :          CellScales;
+@group(0) @binding(0) var<storage, read> suzannePosition        : vec3f;
+@group(0) @binding(1) var<storage, read> suzanneScale           : vec3f;
+@group(0) @binding(2) var<storage, read> suzanneRotation        : vec3f;
 
 @group(0) @binding(3) var<uniform> cameraViewProjectionMatrix : mat4x4f;
 
@@ -144,7 +132,6 @@ struct VertexOutput {
 }
 
 struct VertexInput {
-  @builtin(instance_index) instanceIdx: u32,
   @location(0) position: vec4f,
   @location(1) uv: vec2f
 }
@@ -152,32 +139,17 @@ struct VertexInput {
 @vertex
 fn mainVertex(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
-    var cellPositionVec : vec3f = vec3f(
-      cellsPositions.position[input.instanceIdx * 3 + 0],
-      cellsPositions.position[input.instanceIdx * 3 + 1],
-      cellsPositions.position[input.instanceIdx * 3 + 2]
-    );
-    var cellRotationVec : vec3f = vec3f(
-      cellsRotation.rotation[input.instanceIdx * 3 + 0],
-      cellsRotation.rotation[input.instanceIdx * 3 + 1],
-      cellsRotation.rotation[input.instanceIdx * 3 + 2]
-    );
-    var cellTranslationMatrix: mat4x4<f32> = translateMatrix(cellPositionVec);
-    
-    var rotationTranslationMatrix: mat4x4<f32> = rotateX(cellTranslationMatrix, cellRotationVec[0]);
-    rotationTranslationMatrix = rotateY(rotationTranslationMatrix, cellRotationVec[1]);
-    rotationTranslationMatrix = rotateZ(rotationTranslationMatrix, cellRotationVec[2]);
-    
-    var scaleValueVector = vec3f(
-      cellsScales.scale[input.instanceIdx * 3 + 0],
-      cellsScales.scale[input.instanceIdx * 3 + 1],
-      cellsScales.scale[input.instanceIdx * 3 + 2]
-    ); 
-    
-    var scaleMatrix: vec4f = scaleColumnMatrix(scaleValueVector, input.position);
 
-    output.Position = cameraViewProjectionMatrix * rotationTranslationMatrix  * scaleMatrix;
-    output.fragUV = input.uv;
-    output.fragPosition = 0.5 * (input.position + vec4(1.0));
+    var suzanneScaleColumnMatrix: vec4f = scaleColumnMatrix(suzanneScale, input.position);
+    var suzanneTranslationMatrix: mat4x4<f32> = translateMatrix(suzannePosition);
+
+    var rotationTranslationMatrix: mat4x4<f32> = rotateX(suzanneTranslationMatrix, suzanneRotation.x);
+        rotationTranslationMatrix = rotateY(rotationTranslationMatrix, suzanneRotation.y);
+        rotationTranslationMatrix = rotateZ(rotationTranslationMatrix, suzanneRotation.z);
+    
+      output.Position =  cameraViewProjectionMatrix * rotationTranslationMatrix * suzanneScaleColumnMatrix;
+      output.fragUV = input.uv;
+      output.fragPosition = vec4f(1,1,1,1);
+    
     return output;
 }
