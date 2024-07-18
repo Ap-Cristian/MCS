@@ -1,9 +1,11 @@
 import { mat4, vec3 } from "gl-matrix";
 
-export class Camera{
-    public X:number = 0;
-    public Y:number = 0;
-    public Z:number = 0;
+export class Camera {
+    public Active: boolean = false;
+
+    public X: number = 0;
+    public Y: number = 0;
+    public Z: number = 0;
 
     public rotX: number = 0;
     public rotY: number = 0;
@@ -17,11 +19,11 @@ export class Camera{
 
     public LookAt: vec3 = vec3.fromValues(0, 0, 0);
 
-    constructor (aspect: number) {
+    constructor(aspect: number) {
         this.aspect = aspect;
     }
-    
-    public getViewMatrix () : mat4 {
+
+    public getViewMatrix(): mat4 {
         let viewMatrix = mat4.create();
         mat4.lookAt(viewMatrix, vec3.fromValues(this.X, this.Y, this.Z), this.LookAt, vec3.fromValues(0, 1, 0));
 
@@ -32,13 +34,20 @@ export class Camera{
         return viewMatrix;
     }
 
-    public getProjectionMatrix () : mat4 {
+    public getProjectionMatrix(): mat4 {
         let projectionMatrix = mat4.create();
         mat4.perspective(projectionMatrix, this.fovy, this.aspect, this.near, this.far);
         return projectionMatrix;
     }
 
-    public getCameraViewProjMatrix () : mat4 {
+    public getProjectionArray(): Float32Array{
+        var result = new Float32Array(16);
+        result.set(this.getCameraViewProjMatrix(), 0);
+        
+        return result;
+    }
+
+    public getCameraViewProjMatrix(): mat4 {
         const viewProjMatrix = mat4.create();
         const view = this.getViewMatrix();
         const proj = this.getProjectionMatrix();

@@ -1,16 +1,15 @@
 import { McsObject } from "./objectBase";
-import { WireframeRenderPipeline } from "../res/render-pipelines/wireframe.pipeline";
-import { Drawable } from "./drawable";
 import { McsObjectParameters } from "../res/interfaces/IMcsObjectParameters";
 import { Color } from "../objects/color";
+import { Drawable } from "./drawable";
 
 export class Gizmo{
     private position:   Float32Array = new Float32Array([0, 0, 0]);
     private rotation:   Float32Array = new Float32Array([0, 0, 0]);
     private scale:      Float32Array = new Float32Array([1, 1, 1]);
-    private drawable:   Drawable = new Drawable();
+    // private drawable:   Drawable;
     
-    public Parent:      McsObject;
+    public Parent:      Drawable;
     public Type:        string = '';
     public Color: Color = Color.WHITE;
 
@@ -29,10 +28,6 @@ export class Gizmo{
         this.ScaleX = parameter.ScaleX ? parameter.ScaleX : 1;
         this.ScaleY = parameter.ScaleY ? parameter.ScaleY : 1;
         this.ScaleZ = parameter.ScaleZ ? parameter.ScaleZ : 1;
-    }
-
-    attachRenderObjects(): void {
-        this.Drawable.RenderPipeline = WireframeRenderPipeline.GetInstance().Pipeline;
     }
 
     public get RotationX() {
@@ -83,10 +78,6 @@ export class Gizmo{
         return this.scale;
     }
 
-    public get Drawable(): Drawable {
-        return this.drawable;
-    }
-
     public set RotationX(value: number) {
         this.rotation[0] = value;
     }
@@ -123,21 +114,22 @@ export class Gizmo{
         this.scale[2] = value;
     }
 
-    constructor(parent: McsObject){
-        this.Parent = parent;
+    constructor(drawableParent: Drawable, objectParent: McsObject){
+        this.Parent = drawableParent;
         var transformParams:McsObjectParameters ={
-            X:this.Parent.X,
-            Y:this.Parent.Y,
-            Z:this.Parent.Z,
-            RotX:this.Parent.RotationX,
-            RotY:this.Parent.RotationY,
-            RotZ:this.Parent.RotationZ,
-            ScaleX:this.Parent.ScaleX,
-            ScaleY:this.Parent.ScaleY,
-            ScaleZ:this.Parent.ScaleZ,
+            X: objectParent.X,
+            Y: objectParent.Y,
+            Z: objectParent.Z,
+
+            RotX: objectParent.RotationX,
+            RotY: objectParent.RotationY,
+            RotZ: objectParent.RotationZ,
+            
+            ScaleX: objectParent.ScaleX,
+            ScaleY: objectParent.ScaleY,
+            ScaleZ: objectParent.ScaleZ,
         } 
         this.setTransformation(transformParams);
-        this.attachRenderObjects();
         this.Type = "Gizmo"; 
     }
 }

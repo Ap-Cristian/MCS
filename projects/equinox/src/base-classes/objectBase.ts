@@ -1,25 +1,38 @@
-import { Color } from "../objects/color";
-import { BoundingBox } from "../objects/gizmos/boundingBox";
-import { McsObjectParameters } from "../res/interfaces/IMcsObjectParameters";
-import { IVertex } from "../res/interfaces/IVertex";
-import { Drawable } from "./drawable";
+export interface ObjectParameters{
+    X: number;
+    Y: number;
+    Z: number;
 
-export abstract class McsObject {
+    RotX: number;
+    RotY: number;
+    RotZ: number;
+
+    ScaleX: number;
+    ScaleY: number;
+    ScaleZ: number;
+};
+
+export interface McsObj{
+    type:string,
+    parameters:ObjectParameters
+}
+
+export class McsObject {
     private position: Float32Array = new Float32Array([0, 0, 0]);
     private rotation: Float32Array = new Float32Array([0, 0, 0]);
     private scale: Float32Array = new Float32Array([1, 1, 1]);
-    private drawable: Drawable = new Drawable();
 
-    public BoundingBox: BoundingBox = new BoundingBox(this, Color.WHITE);
+    // protected drawable: Drawable;
+
+    // public BoundingBox: BoundingBox = new BoundingBox(this, Color.WHITE);
     public Type: string = '';
 
-    abstract attachRenderObjects(): void;
+    // abstract attachDrawable(): void;
 
-    constructor(objType: string, parameter?: McsObjectParameters) {
-        this.setTransformation(parameter);
-        this.Type = objType;
-
-        this.attachRenderObjects();
+    constructor(object: McsObj) {
+        this.setTransformation(object.parameters);
+        this.Type = object.type;
+        // this.attachDrawable();
     }
 
     public get RotationX() {
@@ -70,9 +83,9 @@ export abstract class McsObject {
         return this.scale;
     }
 
-    public get Drawable(): Drawable {
-        return this.drawable;
-    }
+    // public get Drawable(): Drawable {
+    //     return this.drawable;
+    // }
 
     public set RotationX(value: number) {
         this.rotation[0] = value;
@@ -110,7 +123,7 @@ export abstract class McsObject {
         this.scale[2] = value;
     }
 
-    private setTransformation(parameter?: McsObjectParameters) {
+    private setTransformation(parameter?: ObjectParameters) {
         if (parameter == null) {
             return;
         }

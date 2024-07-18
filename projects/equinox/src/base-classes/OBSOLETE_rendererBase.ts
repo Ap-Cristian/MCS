@@ -1,8 +1,8 @@
 import { Camera } from "../objects/camera";
 import { Scene } from "../objects/scene";
-import { device } from "../objects/rendererMain";
+import { device } from "../objects/renderer";
 
-export abstract class Renderer{
+export abstract class Renderer_OBSOLETE{
     private readonly floatsPerVertex:number = (4 + 4 + 2);      // 3 for position, 3 for normal, 2 for uv, 3 for color
 
     protected cameraProjectionBuffer:GPUBuffer;

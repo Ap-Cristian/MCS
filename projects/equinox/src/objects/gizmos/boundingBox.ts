@@ -2,6 +2,7 @@ import { IVertex } from "../../res/interfaces/IVertex";
 import { Color } from "../color";
 import { McsObject } from "../../base-classes/objectBase";
 import { Gizmo } from "../../base-classes/gizmoBase";
+import { Drawable } from "../../base-classes/drawable";
 
 export class BoundingBox extends Gizmo{
     public FaceIndexData: Uint32Array = new Uint32Array([
@@ -24,12 +25,13 @@ export class BoundingBox extends Gizmo{
 
     public TopVertecies:IVertex[];
     public BottomVertecies:IVertex[];
+    public VertexArray: IVertex[];
 
     public get Vertecies(): IVertex[]{
-        if(!this.Drawable.VertexArray)
+        if(!this.VertexArray)
             this.findBoundingBoxVertexCoordinates();
 
-        return this.Drawable.VertexArray;
+        return this.VertexArray;
     }
 
     private findBoundingBoxVertexCoordinates(): void{
@@ -45,7 +47,7 @@ export class BoundingBox extends Gizmo{
                 uv:[0,0,0]
             };
 
-            this.Parent.Drawable.VertexArray.forEach((vertex)=>{
+            this.Parent.VertexArray.forEach((vertex)=>{
                 vertex.pos[0] < v0.pos[0] ? v0.pos[0] = vertex.pos[0] : null;
                 vertex.pos[1] < v0.pos[1] ? v0.pos[1] = vertex.pos[1] : null;    
                 vertex.pos[2] < v0.pos[2] ? v0.pos[2] = vertex.pos[2] : null;    
@@ -95,22 +97,19 @@ export class BoundingBox extends Gizmo{
             v4.pos = [v0.pos[0],    v7.pos[1],      v7.pos[2]]; //top
             v6.pos = [v0.pos[0],    v7.pos[1],      v0.pos[2]]; //top
 
-            this.Drawable.VertexArray = [v0, v1, v2, v3, v4, v5, v6, v7];
+            this.VertexArray = [v0, v1, v2, v3, v4, v5, v6, v7];
 
             this.TopVertecies = [v6,v3,v4,v7]; //ordered left to right
             this.BottomVertecies = [v0,v2,v5,v1];
-
-
-
+            
         }else{
             throw("BoundingBoxRenderer: Parent object not set!");
         }
     }
 
-    constructor(parent:McsObject, color?:Color){
-        super(parent);
+    constructor(parentDrawable:Drawable, parentObject:McsObject, color?:Color){
+        super(parentDrawable, parentObject);
 
-        this.Parent = parent;
         this.Color = color ? color : Color.WHITE;
     }
 }
