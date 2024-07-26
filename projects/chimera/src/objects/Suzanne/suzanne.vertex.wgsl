@@ -120,8 +120,8 @@ fn scaleColumnMatrix(scaleValues:vec3f, vertPos:vec4f) -> vec4f{
 }
 
 @group(0) @binding(0) var<storage, read> suzannePosition        : vec3f;
-@group(0) @binding(1) var<storage, read> suzanneScale           : vec3f;
-@group(0) @binding(2) var<storage, read> suzanneRotation        : vec3f;
+@group(0) @binding(1) var<storage, read> suzanneRotation        : vec3f;
+@group(0) @binding(2) var<storage, read> suzanneScale           : vec3f;
 
 @group(0) @binding(3) var<uniform> cameraViewProjectionMatrix : mat4x4f;
 

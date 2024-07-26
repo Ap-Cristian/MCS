@@ -9,14 +9,16 @@ import { device } from "../objects/renderer";
 import { McsObject } from "./objectBase";
 import { McsObjectParameters } from "../res/interfaces/IMcsObjectParameters";
 import { Vec3 } from "wgpu-matrix";
+import { CellRenderPipeline } from "../res/render-pipelines/cell.render.pipeline";
+import { SuzanneRenderPipeline } from "../res/render-pipelines/suzanne.render.pipeline";
 
-export class Drawable{
+export class Drawable {
     private readonly FLOATS_PER_VERTEX: number = (4 + 4 + 2);
     private readonly VERTECIES_STRIDE = this.FLOATS_PER_VERTEX * 4;
-    private readonly NUMBER_OF_INSTANCES:number;
+    private readonly NUMBER_OF_INSTANCES: number;
 
-    private _parentObject?:McsObject;
-    private _parentsObjects?:McsObject[];
+    private _parentObject?: McsObject;
+    private _parentsObjects?: McsObject[];
 
     private _faceIndexData?: Uint16Array;
     private _vertexArray: IVertex[];
@@ -28,7 +30,7 @@ export class Drawable{
     private _verticesBO: GPUBuffer;
     private _facesIndexBO?: GPUBuffer;
     private _cameraProjectionBO: GPUBuffer;
-    
+
     private _uniformBindGroup: GPUBindGroup;
 
     public RenderPipeline: GPURenderPipeline;
@@ -49,7 +51,7 @@ export class Drawable{
     public get FacesArray() {
         return this._facesArray;
     }
-    
+
     // 6.16
     //maybe pass an mcsObject as objectParams,
     //all the renderer should do is get a list of objects and then
@@ -68,10 +70,14 @@ export class Drawable{
     // which would render (hah get it) iterating trough an object array every frame very slow.
     // !!- modifying the shader source at runtime might be required in order to support instancing for all objects.
 
-    constructor(drawableParams: IDrawable, parent?:McsObject, parents?:McsObject[]) {
-        if(parent)
+    // 7.23 
+    // create a pipeline creation object/function that takes as arguments the source code for 
+    // the object shader. The pipeline creation process is exactly
+    constructor(drawableParams: IDrawable, parent?: McsObject, parents?: McsObject[]) {
+        if (parent) {
             this._parentObject = parent;
-        else if(parents){
+        }
+        else if (parents) {
             this._parentsObjects = parents;
         }
 
@@ -85,45 +91,51 @@ export class Drawable{
         }
 
         this.initOBs();
-        this.mapVertecies();
         this.initBindGroup();
     };
 
     private initOBs() {
-        if(!device){
+        if (!device) {
             console.error("Drawable: initOBs: No device available!");
             return;
         }
 
         this._positionBO = device.createBuffer({
+            label: "DRAWABLE_POS",
             size: this._parentObject.Position.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         });
 
         this._scaleBO = device.createBuffer({
+            label: "DRAWABLE_SCAL",
             size: this._parentObject.Scale.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         });
 
         this._rotationBO = device.createBuffer({
+            label: "DRAWABLE_ROT",
             size: this._parentObject.Rotation.length * Float32Array.BYTES_PER_ELEMENT,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         });
 
         this._verticesBO = device.createBuffer({
+            label: "DRAWABLE_VTC",
             size: this.VertexArray.length * this.VERTECIES_STRIDE,
             usage: GPUBufferUsage.VERTEX,
             mappedAtCreation: true
         });
+        this.mapVertecies();
 
         if (this._facesArray && this._faceIndexData) {
             this._facesIndexBO = device.createBuffer({
+                label: "DRAWABLE_FACES",
                 size: this._faceIndexData.length * Uint16Array.BYTES_PER_ELEMENT,
                 usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.INDEX
             });
-        } else {
-            console.error("DRAWABLE: initOBs(): _facesIndexData is null!");
         }
+        // else {
+        //     console.error("DRAWABLE: initOBs(): _facesIndexData is null!");
+        // }
     }
 
     private mapVertecies() {
@@ -156,6 +168,7 @@ export class Drawable{
     }
 
     private initBindGroup() {
+
         var bindingIdx = 0;
         var entries: Iterable<GPUBindGroupEntry> = [
             {
@@ -187,10 +200,19 @@ export class Drawable{
                 }
             },
         ];
+
+        //             layout: this.cell_renderPipeline.getBindGroupLayout(0),
+        //             entries: uniformBindGroupEntries
+
+        this._uniformBindGroup = device.createBindGroup({
+            layout: SuzanneRenderPipeline.GetInstance().Pipeline.getBindGroupLayout(0),
+            entries: entries,
+            label: "DRAWABLE_BIND_GROUP"
+        })
     }
 
     private writeUniformsDataToBuffers() {
-        if(!device){
+        if (!device) {
             console.error("Drawable: writeUniformsDataToBuffers: No device available!");
             return;
         }
@@ -217,6 +239,10 @@ export class Drawable{
             this._parentObject.Rotation.byteLength
         ); // scale
 
+        // console.log(`rot ${this._parentObject.Rotation}`)
+        // console.log(`scale ${this._parentObject.Scale}`)
+        // console.log(`pos ${this._parentObject.Position}`)
+
         if (this._faceIndexData) {
             device.queue.writeBuffer(
                 this._facesIndexBO,
@@ -228,7 +254,7 @@ export class Drawable{
         }
     }
 
-    public frame(passEncoder: GPURenderPassEncoder, cameraProjectionBO: GPUBuffer) {
+    public draw(passEncoder: GPURenderPassEncoder, cameraProjectionBO: GPUBuffer) {
         this._cameraProjectionBO = cameraProjectionBO;
         this.writeUniformsDataToBuffers();
 

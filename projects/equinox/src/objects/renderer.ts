@@ -5,6 +5,9 @@ import { Drawable } from '../base-classes/drawable';
 import { McsObject } from '../base-classes/objectBase';
 import { CellShaderResources } from '../res/cell.res';
 import { CellRenderPipeline } from '../res/render-pipelines/cell.render.pipeline';
+import { CanvasLayers, createRenderPassDescriptor, depthTextureView } from '../misc/renderUtils';
+import { SuzanneShaderResources } from '../res/suzanne.res';
+import { SuzanneRenderPipeline } from '../res/render-pipelines/suzanne.render.pipeline';
 // import { CellRenderer } from '../renderers/cellRenderer';
 // import { SuzanneRenderer } from '../renderers/OBSOLETE_suzanneRenderer';
 // import { BoundingBoxRenderer } from '../renderers/OBSOLETE_boundingBoxRenderer';
@@ -15,7 +18,8 @@ const FRAME_ERROR_PROBE_ONLY_ONCE: boolean = true;
 
 export interface RendererParams {
     scenes: Array<Scene>,
-    activeSceneIndex: number
+    activeSceneIndex: number,
+    canvases: HTMLCanvasElement[]
 }
 
 export class Renderer {
@@ -24,6 +28,12 @@ export class Renderer {
 
     private _drawables: Drawable[] = new Array<Drawable>();
     private _cameraProjectionBO: GPUBuffer;
+
+    private _renderPassDescriptor: GPURenderPassDescriptor;
+    private _commandEncoder: GPUCommandEncoder;
+
+    private _renderContext: GPUCanvasContext;
+    private _framerateContext: CanvasRenderingContext2D;
 
     // private initSuccess:                boolean = false;
 
@@ -47,12 +57,16 @@ export class Renderer {
     // }
     constructor(rendererParams: RendererParams) {
         this._scenes = rendererParams.scenes;
-
         this.initGpuDevice().then(() => {
             if (rendererParams.activeSceneIndex >= 0 && rendererParams.activeSceneIndex < this._scenes.length) {
                 this._activeSceneIdx = rendererParams.activeSceneIndex;
-                this.updateCamera(); // might not be needed
+                this.initCameraProjBuffer();
+                this.initContexts(rendererParams.canvases);
+                this.initRenderPassDescriptor(rendererParams.canvases[CanvasLayers.RENDER_CANVAS]);
+
+                this.configRenderingContext();
                 this.createDrawablesFromSceneObjects();
+                // this.updateCamera(); // might not be 1needed
             }
             else {
                 console.error("Renderer: Active scene out of scene array range.");
@@ -61,37 +75,130 @@ export class Renderer {
         });
     }
 
+    private pushErrorScopes() {
+        device.pushErrorScope("validation")
+        device.pushErrorScope("out-of-memory")
+        device.pushErrorScope("internal")
+    }
+
+    private popErrorScopes() {
+        device.popErrorScope().then((ex) => {
+            if (ex) {
+                console.error(`INTERNAL: ${ex.message}`);
+            }
+        })
+        device.popErrorScope().then((ex) => {
+            if (ex) {
+                console.error(`OUT_OF_MEM: ${ex.message}`);
+            }
+        })
+        device.popErrorScope().then((ex) => {
+            if (ex) {
+                console.error(`INTERNAL: ${ex.message}`);
+            }
+        })
+    }
+
     private async initGpuDevice() {
         if (navigator.gpu) {
             const adapter = await navigator.gpu.requestAdapter();
             device = await adapter.requestDevice();
         }
-        else{
+        else {
             console.error("WebGPU is not available for your browser. Please check compatibility.")
         }
     }
 
+    private configRenderingContext() {
+        this._renderContext.configure(
+            {
+                device: device,
+                format: navigator.gpu.getPreferredCanvasFormat(),
+                alphaMode: 'premultiplied',
+            }
+        )
+    }
+
+
+    // //     this.webgpuContext.configure({
+    // //         device,
+    // //         format: this.presentationFormat,
+    // //         alphaMode: 'premultiplied',
+    // //     });
+
+    private initCameraProjBuffer() {
+        var cameraProjArray = this._scenes[this._activeSceneIdx].ActiveCamera.getProjectionArray();
+        this._cameraProjectionBO = device.createBuffer({
+            label: "CAMERA_BUFFER",
+            size: cameraProjArray.length * Float32Array.BYTES_PER_ELEMENT,
+            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM
+        });
+    }
+
     private updateCamera() {
         var activeSceneCamera = this._scenes[this._activeSceneIdx].ActiveCamera;
-        var _projArr = activeSceneCamera.getProjectionArray();
+        // const _projArr = activeSceneCamera.getProjectionArray();
+
+        var _projArr = new Float32Array(16);
+        _projArr.set(activeSceneCamera.getProjectionMatrix(), 0)
 
         device.queue.writeBuffer(
             this._cameraProjectionBO,
             0,
             _projArr.buffer,
-            _projArr.byteLength,
-            _projArr.byteOffset
+            _projArr.byteOffset,
+            _projArr.byteLength
         )
 
     }
+    //GPU rendering init
+    private initRenderPassDescriptor(canvas: HTMLCanvasElement) {
+        this._renderPassDescriptor = createRenderPassDescriptor(depthTextureView(device, canvas));
+    }
+
+    private initContexts(canvasLayers: HTMLCanvasElement[]) {
+        this._renderContext = canvasLayers[CanvasLayers.RENDER_CANVAS].getContext("webgpu") as unknown as GPUCanvasContext;
+        this._framerateContext = canvasLayers[CanvasLayers.FRAMERATE_CANVAS].getContext("2d") as unknown as CanvasRenderingContext2D;
+    }
+    //
 
     private updateObjects() {
 
     }
 
-    private update() {
-        this.updateCamera();
+    public update() {
+        if (device) {
+            this.updateCamera();
+        } else {
+            console.warn("Renderer: Update(): Device is still loading...");
+        }
         // this.updateObjectsDrawables();
+    }
+
+    public draw() {
+        if (device) {
+            this.pushErrorScopes();
+            this._commandEncoder = device.createCommandEncoder();
+
+            var gpuCurrentTexture = this._renderContext.getCurrentTexture();
+            var RPAcolorAttachment = (this._renderPassDescriptor.colorAttachments as [GPURenderPassColorAttachment])[0];
+
+            RPAcolorAttachment.view = gpuCurrentTexture.createView();
+
+            const passEncoder = this._commandEncoder.beginRenderPass(this._renderPassDescriptor);
+            this._drawables.forEach((drawable) => {
+                drawable.draw(passEncoder, this._cameraProjectionBO);
+            })
+
+            passEncoder.end();
+            device.queue.submit([this._commandEncoder.finish()]);
+
+            this.popErrorScopes();
+
+        }
+        else {
+            console.warn("Renderer: Draw(): Device is still loading...");
+        }
     }
 
     private createDrawablesFromSceneObjects() {
@@ -112,10 +219,20 @@ export class Renderer {
                         }, object);
                         break;
                     }
+                    case "imported": {
+                        currentDrawable = new Drawable({
+                            _cameraProjectionBO: this._cameraProjectionBO,
+                            _vertecies: SuzanneShaderResources.getInstance().vertecies,
+                            _faces: SuzanneShaderResources.getInstance().faces,
+                            _renderPipeline: SuzanneRenderPipeline.GetInstance().Pipeline
+                        }, object);
+                        break;
+                    }
                     default: {
                         break;
                     }
                 }
+                this._drawables.push(currentDrawable);
             });
         }
     }
@@ -142,11 +259,11 @@ export class Renderer {
     //     this.presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 
-    //     this.webgpuContext.configure({
-    //         device,
-    //         format: this.presentationFormat,
-    //         alphaMode: 'premultiplied',
-    //     });
+    // //     this.webgpuContext.configure({
+    // //         device,
+    // //         format: this.presentationFormat,
+    // //         alphaMode: 'premultiplied',
+    // //     });
 
 
     //     this.renderPassDescriptor = {

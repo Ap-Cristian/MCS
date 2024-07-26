@@ -1,3 +1,4 @@
+import { vec3 } from "gl-matrix";
 import { McsObject, ObjectParameters } from "../base-classes/objectBase";
 import { Camera } from "./camera";
 // import { Cell } from "./cell";
@@ -6,71 +7,79 @@ import { Camera } from "./camera";
 import { InputHandler } from "./inputHandler";
 import { Renderer } from "./renderer";
 import { Scene } from "./scene";
+import { CanvasLayers } from "../misc/renderUtils";
 
 const CELLS_DEBUG = false;
-export const NUMBER_OF_CELLS_ON_ROW:number = CELLS_DEBUG ? 10 : 0;
-export const NUMBER_OF_CELLS:number = NUMBER_OF_CELLS_ON_ROW ** 3; 
+export const NUMBER_OF_CELLS_ON_ROW: number = CELLS_DEBUG ? 10 : 0;
+export const NUMBER_OF_CELLS: number = NUMBER_OF_CELLS_ON_ROW ** 3;
 
-export class Engine{
+export class Engine {
     // private webGPUCanvas:HTMLCanvasElement;
     // private frameRateCanvas:HTMLCanvasElement;
-    private canvases: HTMLCanvasElement[] = new Array<HTMLCanvasElement>(); // 0 - WebGPU - canvas, 1 - framerate canvas
+    private canvases: HTMLCanvasElement[] = new Array<HTMLCanvasElement>(2); // 0 - WebGPU - canvas, 1 - framerate canvas
     private scenes: Scene[] = new Array<Scene>();
     private mainCam: Camera;
+    private mainRenderer: Renderer;
     // private mainRenderer:WebGpuRenderer;
     // private mainScene:Scene;
-    private inputHandler:InputHandler;
+    private inputHandler: InputHandler;
 
-    constructor(){
+    constructor() {
         var webGPUCanvas = document.getElementById('webGpu-context') as HTMLCanvasElement;
         var frameRateCanvas = document.getElementById('framerate-context') as HTMLCanvasElement;
-        this.canvases = this.canvases.concat([webGPUCanvas, frameRateCanvas]);
+
+        this.canvases[CanvasLayers.FRAMERATE_CANVAS] = frameRateCanvas;
 
         if (webGPUCanvas) {
             webGPUCanvas.width = window.innerWidth;
             webGPUCanvas.height = window.innerHeight;
-            
-            addEventListener("resize", ()=>{
+
+            this.canvases[CanvasLayers.RENDER_CANVAS] = webGPUCanvas;
+
+            addEventListener("resize", () => {
                 this.resizeContextsToWindow();
             });
             this.inputHandler = new InputHandler();
-            
-            this.mainCam = new Camera(webGPUCanvas.width / webGPUCanvas.height);
-            var mainRenderer = new Renderer(
+
+            this.mainCam = new Camera(webGPUCanvas.width / webGPUCanvas.height, true);
+            this.mainCam.Z = 10;
+
+            this.mainRenderer = new Renderer(
                 {
                     scenes: [
                         new Scene({
                             cameras: [this.mainCam],
                             objects: [
                                 new McsObject({
-                                    type:"Cell",
-                                    parameters:{
-                                        X:0,
-                                        Y:0,
-                                        Z:0,
+                                    type: "imported",
+                                    parameters: {
+                                        X: 0,
+                                        Y: 0,
+                                        Z: 0,
 
-                                        RotX:0,
-                                        RotY:0,
-                                        RotZ:0,
+                                        RotX: 0,
+                                        RotY: 0,
+                                        RotZ: 0,
 
-                                        ScaleX:0,
-                                        ScaleY:0,
-                                        ScaleZ:0
+                                        ScaleX: 1,
+                                        ScaleY: 1,
+                                        ScaleZ: 1
                                     }
-                                })
+                                }),
                             ]
                         })
                     ],
-                    activeSceneIndex: 0
+                    activeSceneIndex: 0,
+                    canvases: this.canvases
                 });
-            
+
             // this.mainRenderer = new WebGpuRenderer();
             // this.mainRenderer.init(this.canvases).then((success)=>{
             //     if(!success){ 
             //         console.error("[ERR] Failed to init main renderer, exiting...");
             //         return;
             //     }
-                
+
             //     this.mainCam = new Camera(this.webGPUCanvas.width / this.webGPUCanvas.height);
             //     this.mainCam.Z = 10;
 
@@ -109,12 +118,13 @@ export class Engine{
             //     this.InitMainRenderingLoop();
             // });
             this.InitInputHandlingCallbacks(webGPUCanvas);
+            this.beginMainRenderingLoop();
         }
     }
 
-    private InitInputHandlingCallbacks(mainCanvas:HTMLCanvasElement){
+    private InitInputHandlingCallbacks(mainCanvas: HTMLCanvasElement) {
         const mouseMoveHandlerBind = this.inputHandler.mouseMoveInputHandler.bind(this.inputHandler, this.mainCam);
-        const mouseHandlerBind = this.inputHandler.mouseWheelHandle.bind(this.inputHandler,this.mainCam);
+        const mouseHandlerBind = this.inputHandler.mouseWheelHandle.bind(this.inputHandler, this.mainCam);
         const mouseClickHandlerBind = this.inputHandler.mouseClickInputHandler.bind(this.inputHandler);
         const keyboardHandlerBind = this.inputHandler.keyboardInputHandler.bind(this.inputHandler);
 
@@ -127,14 +137,14 @@ export class Engine{
         window.onkeyup = keyboardHandlerBind;
     }
 
-    private resizeContextsToWindow():void {
-        if(this.canvases){
-            console.log("[DEBUG] Window resized, updating...");2
+    private resizeContextsToWindow(): void {
+        if (this.canvases) {
+            console.log("[DEBUG] Window resized, updating...");
             this.canvases[0].width = window.innerWidth;
             this.canvases[0].height = window.innerHeight;
 
             this.canvases[1].width = window.innerWidth;
-            
+
             this.mainCam.aspect = this.canvases[0].width / this.canvases[0].height;
             // this.mainRenderer.updateMain(this.webGPUCanvas);
             // if(this.mainRenderer){
@@ -143,10 +153,12 @@ export class Engine{
         }
     }
 
-    private InitMainRenderingLoop(){
+    private beginMainRenderingLoop() {
         const doFrame = () => {
             // this.mainRenderer.updateMain(this.webGPUCanvas);
             // this.mainRenderer.frameMain(this.mainCam, this.mainScene);
+            this.mainRenderer.update();
+            this.mainRenderer.draw();
             requestAnimationFrame(doFrame);
         };
         requestAnimationFrame(doFrame);

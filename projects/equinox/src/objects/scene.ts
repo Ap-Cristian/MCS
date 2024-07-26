@@ -1,16 +1,16 @@
 import { McsObject } from "../base-classes/objectBase";
 import { Camera } from "./camera";
 
-export interface SceneParams{
-    cameras:Array<Camera>,
-    objects:Array<McsObject>
+export interface SceneParams {
+    cameras: Array<Camera>,
+    objects: Array<McsObject>
 }
-export class Scene{
+export class Scene {
     private _subject: McsObject | null;
     private _cameras: Camera[] = new Array<Camera>();
     private _objects: McsObject[] = [];
 
-    constructor(sceneParams:SceneParams){
+    constructor(sceneParams: SceneParams) {
         this._objects = sceneParams.objects ? sceneParams.objects : null;
         this._cameras = sceneParams.cameras;
     }
@@ -28,12 +28,13 @@ export class Scene{
         }
     }
 
-    public get ActiveCamera(): Camera | null{
-        if(this._cameras){
-            this._cameras.forEach((camera)=>{
-                if(camera.Active)
-                    return camera;
-            })
+    public get ActiveCamera(): Camera | null {
+        if (this._cameras) {
+            for (var i = 0; i < this._cameras.length; i++) {
+                if (this._cameras[i].Active) {
+                    return this._cameras[i];
+                }
+            }
         }
         console.error("Scene: No active camera.");
         return null;
@@ -52,16 +53,16 @@ export class Scene{
     //     // })
     // }
 
-    public set Subject(value: McsObject){
+    public set Subject(value: McsObject) {
         this._subject = value;
     }
 
-    public get Subject():McsObject{
+    public get Subject(): McsObject {
         return this._subject;
     }
 
-    public get Objects():McsObject[] | null{
-        if(this._objects)
+    public get Objects(): McsObject[] | null {
+        if (this._objects)
             return this._objects
         console.error("Scene: No Objects in scene.");
         return null;

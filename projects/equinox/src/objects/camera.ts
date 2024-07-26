@@ -19,8 +19,9 @@ export class Camera {
 
     public LookAt: vec3 = vec3.fromValues(0, 0, 0);
 
-    constructor(aspect: number) {
+    constructor(aspect: number, active?: boolean) {
         this.aspect = aspect;
+        active ? this.Active = active : this.Active = false;
     }
 
     public getViewMatrix(): mat4 {
@@ -40,10 +41,9 @@ export class Camera {
         return projectionMatrix;
     }
 
-    public getProjectionArray(): Float32Array{
+    public getProjectionArray(): Float32Array {
         var result = new Float32Array(16);
         result.set(this.getCameraViewProjMatrix(), 0);
-        
         return result;
     }
 

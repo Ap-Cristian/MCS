@@ -131,8 +131,8 @@ struct CellRotations {
   rotation: array<f32>,
 };
 
-@group(0) @binding(0) var<storage, read> cellsRotation :        CellRotations;
-@group(0) @binding(1) var<storage, read> cellsPositions :       CellPositions;
+@group(0) @binding(0) var<storage, read> cellsPositions :       CellPositions;
+@group(0) @binding(1) var<storage, read> cellsRotation :        CellRotations;
 @group(0) @binding(2) var<storage, read> cellsScales :          CellScales;
 
 @group(0) @binding(3) var<uniform> cameraViewProjectionMatrix : mat4x4f;
@@ -176,7 +176,7 @@ fn mainVertex(input: VertexInput) -> VertexOutput {
     
     var scaleMatrix: vec4f = scaleColumnMatrix(scaleValueVector, input.position);
 
-    output.Position = cameraViewProjectionMatrix * rotationTranslationMatrix  * scaleMatrix;
+    output.Position = cameraViewProjectionMatrix * rotationTranslationMatrix  * scaleMatrix ;
     output.fragUV = input.uv;
     output.fragPosition = 0.5 * (input.position + vec4(1.0));
     return output;
