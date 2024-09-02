@@ -22,6 +22,7 @@ export enum DrawableObjectType {
     GIZMO,
     NOT_SET
 }
+
 export interface RenderPipelineArg {
     vertexShaderCode: string,
     fragmentShaderCode: string,

@@ -40,18 +40,18 @@ export class Scene {
         return null;
     }
 
-    // public spawnInitialCells(density:number){
-    //     // this.subject.BoundingBox.BottomVertecies.forEach((vertex)=>{
-    //     //     this.add(new Cell({
-    //     //         X:vertex.pos[0], 
-    //     //         Y:vertex.pos[1], 
-    //     //         Z:vertex.pos[2], 
-    //     //         ScaleX:0.1, 
-    //     //         ScaleY:0.1, 
-    //     //         ScaleZ:0.1
-    //     //     }));
-    //     // })
-    // }
+    public spawnInitialCells(density: number) {
+        // this.subject.BoundingBox.BottomVertecies.forEach((vertex)=>{
+        //     this.add(new Cell({
+        //         X:vertex.pos[0], 
+        //         Y:vertex.pos[1], 
+        //         Z:vertex.pos[2], 
+        //         ScaleX:0.1, 
+        //         ScaleY:0.1, 
+        //         ScaleZ:0.1
+        //     }));
+        // })
+    }
 
     public set Subject(value: McsObject) {
         this._subject = value;

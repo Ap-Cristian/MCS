@@ -151,7 +151,8 @@ fn mainVertex(input: VertexInput) -> VertexOutput {
       output.Position = cameraViewProjectionMatrix * rotationTranslationMatrix * suzanneScaleColumnMatrix;
       output.fragUV = input.uv;
       
-      output.fragColor = 0.1 * ((suzanneScaleColumnMatrix * rotationTranslationMatrix + 15));
+      output.fragColor = 0.02 * ((suzanneScaleColumnMatrix * rotationTranslationMatrix + 20));
+      // output.fragColor = vec4f(0.5, 0.5, 0.5, 0.5);
     
     return output;
 }

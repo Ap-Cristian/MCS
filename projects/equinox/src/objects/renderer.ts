@@ -1,12 +1,12 @@
 import { Scene } from './scene';
 import { Drawable } from '../base-classes/drawable';
 import { CellShaderResources } from '../res/cell.res';
-import { CanvasLayers, createRenderPassDescriptor, depthTextureView, DrawableObjectType, generateRenderPipeline, ObjectTopology } from '../misc/renderUtils';
+import { CanvasLayers, createRenderPassDescriptor, depthTextureView, DrawableObjectType, generateRenderPipeline, ObjectTopology } from '../helpers/renderUtils';
 import { SuzanneShaderResources } from '../res/suzanne.res';
 import { IFace } from '../res/interfaces/IFace';
 import { IVertex } from '../res/interfaces/IVertex';
 import { WireframeShaderResources } from '../res/wireframe.res';
-import { BOUNDING_BOX_FACE_INDEXES, findBoundingBoxVertexCoordinates } from './gizmos/gizmoMisc';
+import { BOUNDING_BOX_FACE_INDEXES, findBoundingBoxVertexCoordinates } from '../helpers/gizmoMisc';
 
 export var adapter: GPUAdapter;
 export var device: GPUDevice;

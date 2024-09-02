@@ -3,7 +3,7 @@ import { Camera } from "./camera";
 import { InputHandler } from "./inputHandler";
 import { Renderer } from "./renderer";
 import { Scene } from "./scene";
-import { CanvasLayers, DrawableObjectType } from "../misc/renderUtils";
+import { CanvasLayers, DrawableObjectType } from "../helpers/renderUtils";
 
 const CELLS_DEBUG = false;
 export const NUMBER_OF_CELLS_ON_ROW: number = CELLS_DEBUG ? 10 : 0;
@@ -62,38 +62,38 @@ export class Engine {
                                         ScaleZ: 1
                                     }
                                 }),
-                                // new McsObject({
-                                //     type: DrawableObjectType.CELL,
-                                //     parameters: {
-                                //         X: 20,
-                                //         Y: 30,
-                                //         Z: 0,
+                                new McsObject({
+                                    type: DrawableObjectType.CELL,
+                                    parameters: {
+                                        X: 20,
+                                        Y: 30,
+                                        Z: 0,
 
-                                //         RotX: 0,
-                                //         RotY: 0,
-                                //         RotZ: 0,
+                                        RotX: 0,
+                                        RotY: 0,
+                                        RotZ: 0,
 
-                                //         ScaleX: 1,
-                                //         ScaleY: 1,
-                                //         ScaleZ: 1
-                                //     }
-                                // }),
-                                // new McsObject({
-                                //     type: DrawableObjectType.CELL,
-                                //     parameters: {
-                                //         X: -20,
-                                //         Y: 30,
-                                //         Z: 0,
+                                        ScaleX: 1,
+                                        ScaleY: 1,
+                                        ScaleZ: 1
+                                    }
+                                }),
+                                new McsObject({
+                                    type: DrawableObjectType.CELL,
+                                    parameters: {
+                                        X: -20,
+                                        Y: 30,
+                                        Z: 0,
 
-                                //         RotX: 0,
-                                //         RotY: 0,
-                                //         RotZ: 0,
+                                        RotX: 0,
+                                        RotY: 0,
+                                        RotZ: 0,
 
-                                //         ScaleX: 1,
-                                //         ScaleY: 1,
-                                //         ScaleZ: 1
-                                //     }
-                                // }),
+                                        ScaleX: 1,
+                                        ScaleY: 1,
+                                        ScaleZ: 1
+                                    }
+                                }),
                             ]
                         })
                     ],
@@ -170,21 +170,13 @@ export class Engine {
             console.log("[DEBUG] Window resized, updating...");
             this.canvases[0].width = window.innerWidth;
             this.canvases[0].height = window.innerHeight;
-
             this.canvases[1].width = window.innerWidth;
-
             this.mainCam.aspect = this.canvases[0].width / this.canvases[0].height;
-            // this.mainRenderer.updateMain(this.webGPUCanvas);
-            // if(this.mainRenderer){
-            //     this.mainRenderer.UpdateRenderPassDescriptor(this.webGPUCanvas);
-            // }
         }
     }
 
     private beginMainRenderingLoop() {
         const doFrame = () => {
-            // this.mainRenderer.updateMain(this.webGPUCanvas);
-            // this.mainRenderer.frameMain(this.mainCam, this.mainScene);
             this.mainRenderer.update();
             this.mainRenderer.draw();
             requestAnimationFrame(doFrame);

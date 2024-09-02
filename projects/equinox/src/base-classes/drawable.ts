@@ -7,7 +7,7 @@ import { IVertex } from "../res/interfaces/IVertex";
 import { IDrawable, ILine } from "../res/interfaces/IDrawable";
 import { device } from "../objects/renderer";
 import { McsObject } from "./objectBase";
-import { findBoundingBoxVertexCoordinates, LineArrayToUInt32 } from "../objects/gizmos/gizmoMisc";
+import { findBoundingBoxVertexCoordinates, LineArrayToUInt32 } from "../helpers/gizmoMisc";
 
 
 export class Drawable {

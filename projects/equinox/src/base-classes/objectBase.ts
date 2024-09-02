@@ -1,4 +1,4 @@
-import { DrawableObjectType } from "../misc/renderUtils";
+import { DrawableObjectType } from "../helpers/renderUtils";
 
 export interface ObjectParameters {
     X: number;
@@ -24,17 +24,11 @@ export class McsObject {
     private rotation: Float32Array = new Float32Array([0, 0, 0]);
     private scale: Float32Array = new Float32Array([1, 1, 1]);
 
-    // protected drawable: Drawable;
-
-    // public BoundingBox: BoundingBox = new BoundingBox(this, Color.WHITE);
     public Type: DrawableObjectType = DrawableObjectType.NOT_SET;
-
-    // abstract attachDrawable(): void;
 
     constructor(object: McsObj) {
         this.setTransformation(object.parameters);
         this.Type = object.type;
-        // this.attachDrawable();
     }
 
     public get RotationX() {
@@ -84,10 +78,6 @@ export class McsObject {
     public get Scale(): Float32Array {
         return this.scale;
     }
-
-    // public get Drawable(): Drawable {
-    //     return this.drawable;
-    // }
 
     public set RotationX(value: number) {
         this.rotation[0] = value;

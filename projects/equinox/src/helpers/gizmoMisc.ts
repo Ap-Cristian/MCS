@@ -1,6 +1,6 @@
-import { Drawable } from "../../base-classes/drawable";
-import { ILine } from "../../res/interfaces/IDrawable";
-import { IVertex } from "../../res/interfaces/IVertex";
+import { Drawable } from "../base-classes/drawable";
+import { ILine } from "../res/interfaces/IDrawable";
+import { IVertex } from "../res/interfaces/IVertex";
 
 // export const BOUNDING_BOX_FACE_INDEXES: IFace[] = new Array<IFace>([
 //     // back
@@ -162,7 +162,7 @@ export function findBoundingBoxVertexCoordinates(parentDrawable: Drawable): IVer
 
 export function LineArrayToUInt32(lines: ILine[]): Uint32Array {
     const POINTS_PER_LINE = 2;
-    var result = new Uint32Array(lines.length * POINTS_PER_LINE); //line start and line end
+    var result = new Uint32Array(lines.length * POINTS_PER_LINE); //line starWt and line end
     var index: number = 0;
 
     lines.forEach((line) => {
