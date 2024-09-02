@@ -75,7 +75,6 @@ export class WireframeRenderPipeline {
     } else {
       console.log("Device not initialised for Pipeline Creation!");
     }
-
   }
 
   public static instance: WireframeRenderPipeline;

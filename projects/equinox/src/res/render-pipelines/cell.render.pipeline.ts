@@ -9,8 +9,8 @@ export class CellRenderPipeline {
 
   private constructor() {
     if (device) {
-      var vertexShaderModule = device.createShaderModule({ code: this.cellShaderContainer.vertexCode });
-      var fragmentShaderModule = device.createShaderModule({ code: this.cellShaderContainer.fragmentCode });
+      var vertexShaderModule = device.createShaderModule({ code: this.cellShaderContainer.VertexCode });
+      var fragmentShaderModule = device.createShaderModule({ code: this.cellShaderContainer.FragmentCode });
 
       var vertexCompilationInfo = vertexShaderModule.getCompilationInfo();
       var fragmentCompilationInfo = fragmentShaderModule.getCompilationInfo();
@@ -46,7 +46,12 @@ export class CellRenderPipeline {
                 } as GPUVertexAttribute,
                 {
                   shaderLocation: 1,
-                  offset: 4,
+                  offset: 0,
+                  format: 'float32x4',
+                },
+                {
+                  shaderLocation: 2,
+                  offset: 0,
                   format: 'float32x2',
                 }
               ],

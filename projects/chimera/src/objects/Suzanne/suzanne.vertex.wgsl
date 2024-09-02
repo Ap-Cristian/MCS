@@ -28,13 +28,13 @@ fn rotateX(m:mat4x4<f32>, angleInRadians:f32) -> mat4x4<f32>{
   let c = cos(angleInRadians);
   let s = sin(angleInRadians);
 
-  res[1][0]  = c * m10 + s * m20;
-  res[1][1]  = c * m11 + s * m21;
-  res[1][2]  = c * m12 + s * m22;
-  res[1][3]  = c * m13 + s * m23;
+  res[1][0] = c * m10 + s * m20;
+  res[1][1] = c * m11 + s * m21;
+  res[1][2] = c * m12 + s * m22;
+  res[1][3] = c * m13 + s * m23;
 
-  res[2][0]  = c * m20 - s * m10;
-  res[2][1]  = c * m21 - s * m11;
+  res[2][0] = c * m20 - s * m10;
+  res[2][1] = c * m21 - s * m11;
   res[2][2] = c * m22 - s * m12;
   res[2][3] = c * m23 - s * m13;
 
@@ -111,10 +111,10 @@ fn rotateZ(m:mat4x4<f32>, angleInRadians:f32) -> mat4x4<f32>{
 
 fn scaleColumnMatrix(scaleValues:vec3f, vertPos:vec4f) -> vec4f{
   var scaleMatrix = mat4x4<f32>(
-    vec4(scaleValues.x,        0,               0,       0),
+    vec4(scaleValues.x,         0,              0,       0),
     vec4(0,              scaleValues.y,         0,       0),
     vec4(0,                     0,       scaleValues.z,  0),
-    vec4(0,                     0,               0,      1)
+    vec4(0,                     0,              0,       1)
   );
   return scaleMatrix * vertPos;
 }
@@ -133,7 +133,8 @@ struct VertexOutput {
 
 struct VertexInput {
   @location(0) position: vec4f,
-  @location(1) uv: vec2f
+  @location(1) norm: vec4f,
+  @location(2) uv: vec2f
 }
 
 @vertex
@@ -147,9 +148,10 @@ fn mainVertex(input: VertexInput) -> VertexOutput {
         rotationTranslationMatrix = rotateY(rotationTranslationMatrix, suzanneRotation.y);
         rotationTranslationMatrix = rotateZ(rotationTranslationMatrix, suzanneRotation.z);
     
-      output.Position =  cameraViewProjectionMatrix * rotationTranslationMatrix * suzanneScaleColumnMatrix;
+      output.Position = cameraViewProjectionMatrix * rotationTranslationMatrix * suzanneScaleColumnMatrix;
       output.fragUV = input.uv;
-      output.fragColor = 0.5 * ((suzanneScaleColumnMatrix * rotationTranslationMatrix));
+      
+      output.fragColor = 0.1 * ((suzanneScaleColumnMatrix * rotationTranslationMatrix + 15));
     
     return output;
 }

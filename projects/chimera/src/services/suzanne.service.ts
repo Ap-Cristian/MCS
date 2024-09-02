@@ -23,24 +23,24 @@ export function loadSuzanneMtl(): string {
 export function loadSuzanneObj(): string {
     let objPath = path.join(__dirname, '../objects' + OBJ_EXPORTS_FOLDER_NAME + OBJ_FILE_NAME);
     let mtlPath = path.join(__dirname, '../objects' + OBJ_EXPORTS_FOLDER_NAME + MTL_FILE_NAME);
-    
-    const parser:ObjFileParser = new ObjFileParser(objPath, mtlPath);
-    let suzanne:ISuzanneObjResponse = {
-        vertecies:parser.GetVertecies(),
-        faces:parser.GetFaces(),
+
+    const parser: ObjFileParser = new ObjFileParser(objPath, mtlPath);
+    let suzanne: ISuzanneObjResponse = {
+        vertecies: parser.GetVertecies(),
+        faces: parser.GetFaces(),
     }
 
     return JSON.stringify(suzanne);
 }
 
 export function loadSuzanneVertexShader(): string {
-    let vertPath = path.join(__dirname, '../objects'+ SHADERS_FOLDER_NAME + VERT_FILE_NAME);
+    let vertPath = path.join(__dirname, '../objects' + SHADERS_FOLDER_NAME + VERT_FILE_NAME);
     const vertShaderContent = fs.readFileSync(vertPath, "utf-8");
     return JSON.stringify(vertShaderContent);
 }
 
 export function loadSuzanneFragmenthader(): string {
-    let fragPath = path.join(__dirname, '../objects'+ SHADERS_FOLDER_NAME + FRAG_FILE_NAME);
+    let fragPath = path.join(__dirname, '../objects' + SHADERS_FOLDER_NAME + FRAG_FILE_NAME);
     const fragShaderContent = fs.readFileSync(fragPath, "utf-8");
     return JSON.stringify(fragShaderContent);
 }

@@ -3,24 +3,24 @@ import { IFace } from '../misc/IFace';
 
 import fs from 'fs';
 
-export class ObjFileParser{
+export class ObjFileParser {
     private objectIdentifier = '';
-    private vertecies:IVertex[] = [];
-    private faces:IFace[] = [];
+    private vertecies: IVertex[] = [];
+    private faces: IFace[] = [];
 
-    private pathOBJ:string = '';
-    private pathMTL:string = '';
+    private pathOBJ: string = '';
+    private pathMTL: string = '';
 
-    private objReadStream:string = '';
-    private mtlReadStream:string = '';
+    private objReadStream: string = '';
+    private mtlReadStream: string = '';
 
-    private mtlFileName:string = '';
+    private mtlFileName: string = '';
 
-    public GetVertecies():IVertex[] | null{
+    public GetVertecies(): IVertex[] | null {
         return this.vertecies.length > 0 ? this.vertecies : null;
     }
 
-    public GetFaces():IFace[] | null{
+    public GetFaces(): IFace[] | null {
         return this.faces.length > 0 ? this.faces : null;
     }
 
@@ -28,17 +28,17 @@ export class ObjFileParser{
         this.objReadStream = fs.readFileSync(this.pathOBJ, 'utf-8');
         this.mtlReadStream = fs.readFileSync(this.pathMTL, 'utf-8');
         //parse vertecies
-        
-        var pos:Array<number[]> = [];
-        var norm:Array<number[]> = [];
-        var uv:Array<number[]> = [];
+
+        var pos: Array<number[]> = [];
+        var norm: Array<number[]> = [];
+        var uv: Array<number[]> = [];
 
         const objContentLines = this.objReadStream.split('\n');
 
-        for (const line of objContentLines){
+        for (const line of objContentLines) {
             const lineSplitRes = line.split(" ");
 
-            switch (lineSplitRes[0]){
+            switch (lineSplitRes[0]) {
                 case 'mtllib':
                 case 'usemtl':
                     this.mtlFileName = lineSplitRes[1];
@@ -48,14 +48,14 @@ export class ObjFileParser{
                     break;
                 case 'v':
                     pos.push([
-                        Number.parseFloat(lineSplitRes[1]), 
+                        Number.parseFloat(lineSplitRes[1]),
                         Number.parseFloat(lineSplitRes[2]),
                         Number.parseFloat(lineSplitRes[3])
                     ]);
                     break;
                 case 'vn':
                     norm.push([
-                        Number.parseFloat(lineSplitRes[1]), 
+                        Number.parseFloat(lineSplitRes[1]),
                         Number.parseFloat(lineSplitRes[2]),
                         Number.parseFloat(lineSplitRes[3])
                     ]);
@@ -71,9 +71,9 @@ export class ObjFileParser{
                 case '':
                     break;
                 case 'f':
-                    var currentFace:IFace = { indexes:[] };
-                    lineSplitRes.forEach((value)=>{
-                        if(value != 'f'){
+                    var currentFace: IFace = { indexes: [] };
+                    lineSplitRes.forEach((value) => {
+                        if (value != 'f') {
                             var faceSplit = value.split('/');
                             currentFace.indexes.push(Number.parseInt(faceSplit[0]) - 1);
                         }
@@ -87,11 +87,11 @@ export class ObjFileParser{
             }
         }
 
-        for(var i = 0; i < pos.length; i++){
-            var vertex:IVertex = {
-                pos:pos[i],
-                norm: i < norm.length ? norm[i] : [0,0,0],
-                uv:uv[i]
+        for (var i = 0; i < pos.length; i++) {
+            var vertex: IVertex = {
+                pos: pos[i],
+                norm: i < norm.length ? norm[i] : [0, 0, 0],
+                uv: uv[i]
 
             }
             // console.log(pos[i])
@@ -104,7 +104,7 @@ export class ObjFileParser{
 
     }
 
-    constructor(objPath: string, mtlPath:string){
+    constructor(objPath: string, mtlPath: string) {
         this.pathOBJ = objPath;
         this.pathMTL = mtlPath;
 

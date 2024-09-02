@@ -4,13 +4,11 @@
 
 import { IFace } from "../res/interfaces/IFace";
 import { IVertex } from "../res/interfaces/IVertex";
-import { IDrawable } from "../res/interfaces/IDrawable";
+import { IDrawable, ILine } from "../res/interfaces/IDrawable";
 import { device } from "../objects/renderer";
 import { McsObject } from "./objectBase";
-import { McsObjectParameters } from "../res/interfaces/IMcsObjectParameters";
-import { Vec3 } from "wgpu-matrix";
-import { CellRenderPipeline } from "../res/render-pipelines/cell.render.pipeline";
-import { SuzanneRenderPipeline } from "../res/render-pipelines/suzanne.render.pipeline";
+import { findBoundingBoxVertexCoordinates, LineArrayToUInt32 } from "../objects/gizmos/gizmoMisc";
+
 
 export class Drawable {
     private readonly FLOATS_PER_VERTEX: number = (4 + 4 + 2);
@@ -20,9 +18,10 @@ export class Drawable {
     private _parentObject?: McsObject;
     private _parentsObjects?: McsObject[];
 
-    private _faceIndexData?: Uint16Array;
+    private _faceIndexData?: Uint32Array;
     private _vertexArray: IVertex[];
     private _facesArray?: IFace[];
+    private _linesArray?: ILine[];
 
     private _positionBO: GPUBuffer;
     private _scaleBO: GPUBuffer;
@@ -36,7 +35,7 @@ export class Drawable {
     public RenderPipeline: GPURenderPipeline;
     public set VertexArray(value: IVertex[]) {
         this._vertexArray = value;
-        //write to verteciesBO
+        //tbi: write to verteciesBO
     }
 
     public get VertexArray() {
@@ -45,14 +44,21 @@ export class Drawable {
 
     public set FacesArray(value: IFace[]) {
         this._facesArray = value;
-        //write to verteciesBO
+        //tbi: update verteciesBO
     }
 
     public get FacesArray() {
         return this._facesArray;
     }
 
-    // 6.16
+    public get Object(): McsObject | null {
+        if (this._parentObject) {
+            return this._parentObject;
+        }
+        return null;
+    }
+
+    // 6.16 <-- dates (2024)
     //maybe pass an mcsObject as objectParams,
     //all the renderer should do is get a list of objects and then
     //create the coresponding drawables in order to avoid clutter.
@@ -68,18 +74,24 @@ export class Drawable {
     // and if true, instance the given object. All of the parents have to be of the same type.
     // This cannot be avoided due to the requirement of drawing many copies of the same object,
     // which would render (hah get it) iterating trough an object array every frame very slow.
-    // !!- modifying the shader source at runtime might be required in order to support instancing for all objects.
+    // !! modifying the shader source at runtime might be required in order to support instancing for all objects.
 
     // 7.23 
     // create a pipeline creation object/function that takes as arguments the source code for 
-    // the object shader. The pipeline creation process is exactly
+    // the object shader. The pipeline creation process is exactly (kinda lost what i wrote here, oh well)
+
+    // 8.19 
+    // long time no see,
+    // whats left in order to draw the bounding box is to iterate trough each line object inside of the parent of the bounding box drawable,\
+    // and then pass them to the render pass acordingly to the vertex order (unknown yet).
+
     constructor(drawableParams: IDrawable, parent?: McsObject, parents?: McsObject[]) {
         if (parent) {
             this._parentObject = parent;
-        }
-        else if (parents) {
+        } else if (parents) {
             this._parentsObjects = parents;
         }
+
 
         this._vertexArray = drawableParams._vertecies;
         this.RenderPipeline = drawableParams._renderPipeline;
@@ -88,6 +100,14 @@ export class Drawable {
         if (drawableParams._faces) {
             this._facesArray = drawableParams._faces;
             this.mapFaces();
+        }
+
+        if (drawableParams._lines) {
+            //....map lines ---------------------------------------------------------------------------------
+            this._linesArray = drawableParams._lines;
+            this.mapLines();
+
+            console.log("face_idx_data: ", this._faceIndexData)
         }
 
         this.initOBs();
@@ -124,15 +144,16 @@ export class Drawable {
             usage: GPUBufferUsage.VERTEX,
             mappedAtCreation: true
         });
-        this.mapVertecies();
 
-        if (this._facesArray && this._faceIndexData) {
+        if (this._facesArray || this._faceIndexData) {
             this._facesIndexBO = device.createBuffer({
                 label: "DRAWABLE_FACES",
-                size: this._faceIndexData.length * Uint16Array.BYTES_PER_ELEMENT,
+                size: this._faceIndexData.length * Uint32Array.BYTES_PER_ELEMENT,
                 usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.INDEX
             });
         }
+
+        this.mapVertecies();
         // else {
         //     console.error("DRAWABLE: initOBs(): _facesIndexData is null!");
         // }
@@ -140,12 +161,8 @@ export class Drawable {
 
     private mapVertecies() {
         const verteciesMapping = new Float32Array(this._verticesBO.getMappedRange());
-
         var vertexByteOffset = 0;
         this._vertexArray.forEach((vertex) => {
-            vertex.pos.push(1);
-            vertex.norm.push(1);
-
             verteciesMapping.set(vertex.pos, vertexByteOffset);
             vertexByteOffset += vertex.pos.length;
 
@@ -157,7 +174,7 @@ export class Drawable {
 
     private mapFaces() {
         const NUMBER_OF_NUMBERS_IN_FACE = 3;
-        this._faceIndexData = new Uint16Array(this._facesArray.length * NUMBER_OF_NUMBERS_IN_FACE * Uint16Array.BYTES_PER_ELEMENT);
+        this._faceIndexData = new Uint32Array(this._facesArray.length * NUMBER_OF_NUMBERS_IN_FACE * Uint32Array.BYTES_PER_ELEMENT);
 
         var idx = 0;
         this._facesArray.forEach((face) => {
@@ -165,6 +182,10 @@ export class Drawable {
             this._faceIndexData[idx++] = face.indexes[1];
             this._faceIndexData[idx++] = face.indexes[2];
         })
+    }
+
+    private mapLines() {
+        this._faceIndexData = LineArrayToUInt32(this._linesArray);
     }
 
     private initBindGroup() {
@@ -205,7 +226,7 @@ export class Drawable {
         //             entries: uniformBindGroupEntries
 
         this._uniformBindGroup = device.createBindGroup({
-            layout: SuzanneRenderPipeline.GetInstance().Pipeline.getBindGroupLayout(0),
+            layout: this.RenderPipeline.getBindGroupLayout(0),
             entries: entries,
             label: "DRAWABLE_BIND_GROUP"
         })
@@ -250,7 +271,7 @@ export class Drawable {
                 this._faceIndexData.buffer,
                 this._faceIndexData.byteOffset,
                 this._faceIndexData.byteLength
-            ); // index?
+            );
         }
     }
 
@@ -262,8 +283,8 @@ export class Drawable {
         passEncoder.setPipeline(this.RenderPipeline);
         passEncoder.setBindGroup(0, this._uniformBindGroup);
 
-        if (this.FacesArray) {
-            passEncoder.setIndexBuffer(this._facesIndexBO, "uint16");
+        if (this._faceIndexData) {
+            passEncoder.setIndexBuffer(this._facesIndexBO, "uint32");
             passEncoder.drawIndexed(this._faceIndexData.length, 1, 0, 0, 0);
         }
         else {

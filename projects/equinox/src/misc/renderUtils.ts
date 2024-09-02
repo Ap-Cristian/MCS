@@ -3,6 +3,32 @@ export enum CanvasLayers {
     FRAMERATE_CANVAS
 }
 
+export enum ObjectTopology {
+    POINT_LIST = 'point-list',
+    TRIANGLE_LIST = 'triangle-list',
+    LINE_STRIP = 'line-strip',
+    LINE_LIST = 'line-list',
+    TRIANGLE_STRIP = 'triangle-strip'
+}
+
+export enum ShaderType {
+    VERTEX,
+    FRAGMENT
+}
+
+export enum DrawableObjectType {
+    CELL,
+    IMPORTED,
+    GIZMO,
+    NOT_SET
+}
+export interface RenderPipelineArg {
+    vertexShaderCode: string,
+    fragmentShaderCode: string,
+    topology: ObjectTopology,
+    device: GPUDevice
+}
+
 export function depthTextureView(device: GPUDevice, canvas: HTMLCanvasElement): GPUTextureView {
     return device.createTexture({
         size: [
@@ -35,4 +61,95 @@ export function createRenderPassDescriptor(textureView: GPUTextureView): GPURend
             stencilStoreOp: 'store',
         },
     } as GPURenderPassDescriptor;
+}
+
+function outputShaderCompIssues(compilationMessages: Readonly<GPUCompilationMessage[]>, shaderType: ShaderType) {
+    if (compilationMessages.length > 0) {
+        switch (shaderType) {
+            case ShaderType.FRAGMENT:
+                console.error("Faulty fragment shader: ");
+                break;
+            case ShaderType.VERTEX:
+                console.error("Faulty vertex shader: ");
+                break;
+            default:
+                return;
+        }
+
+        compilationMessages.forEach((entry) => {
+            console.error(entry.message)
+        })
+    }
+}
+
+export function generateRenderPipeline(arg: RenderPipelineArg): GPURenderPipeline | null {
+    if (arg.device) {
+        const vertexShaderModule = arg.device.createShaderModule({
+            code: arg.vertexShaderCode
+        });
+        const fragmentShaderModule = arg.device.createShaderModule({
+            code: arg.fragmentShaderCode
+        });
+
+        var vertexCompilationInfo = vertexShaderModule.getCompilationInfo();
+        var fragmentCompilationInfo = fragmentShaderModule.getCompilationInfo();
+        vertexCompilationInfo.then((info) => {
+            outputShaderCompIssues(info.messages, ShaderType.VERTEX);
+        });
+        fragmentCompilationInfo.then((info) => {
+            outputShaderCompIssues(info.messages, ShaderType.FRAGMENT);
+        });
+
+        const bytesPerVertex: number = (3 + 3 + 2);      // 3 for vert position, 2 for vert uv, 3 for vert norm
+        const stride: number = bytesPerVertex * 4;
+
+        return arg.device.createRenderPipeline({
+            layout: 'auto',
+            vertex: {
+                module: vertexShaderModule,
+                entryPoint: 'mainVertex',
+                buffers: [
+                    {
+                        arrayStride: stride,
+                        attributes: [
+                            {
+                                shaderLocation: 0,
+                                offset: 0,
+                                format: 'float32x4', // 3 (+ 1 padding)
+                            } as GPUVertexAttribute,
+                            {
+                                shaderLocation: 1,
+                                offset: 0,
+                                format: 'float32x4',
+                            } as GPUVertexAttribute,
+                            {
+                                shaderLocation: 2,
+                                offset: 0,
+                                format: 'float32x2'
+                            } as GPUVertexAttribute
+                        ],
+                    },
+                ],
+            } as GPUVertexState,
+            fragment: {
+                module: fragmentShaderModule,
+                entryPoint: 'mainFragment',
+                targets: [
+                    {
+                        format: navigator.gpu.getPreferredCanvasFormat() as GPUTextureFormat,
+                    },
+                ],
+            } as GPUFragmentState,
+            primitive: {
+                topology: arg.topology,
+                cullMode: 'back',
+            } as GPUPrimitiveState,
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: 'depth24plus-stencil8',
+            } as GPUDepthStencilState,
+        } as unknown as GPURenderPipelineDescriptor)
+    }
+    return null;
 }

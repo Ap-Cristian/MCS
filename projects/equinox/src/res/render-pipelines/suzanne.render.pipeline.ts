@@ -2,8 +2,8 @@ import { SuzanneShaderResources } from "../suzanne.res";
 import { device } from "../../objects/renderer";
 
 export class SuzanneRenderPipeline {
-  private readonly perVertex: number = (3 + 3 + 2);      // 3 for position, 2 for uv, 3 for color
-  private stride: number = this.perVertex * 4; //4 bytes
+  private readonly perVertex: number = (3 + 3 + 2);      // 3 for vert position, 2 for vert uv, 3 for vert norm
+  private stride: number = this.perVertex * 4;           // 4 bytes
   private suzanneShaderContainer = SuzanneShaderResources.getInstance();
 
   public Pipeline: GPURenderPipeline;
@@ -45,8 +45,13 @@ export class SuzanneRenderPipeline {
                 } as GPUVertexAttribute,
                 {
                   shaderLocation: 1,
-                  offset: 4,
-                  format: 'float32x2',
+                  offset: 0,
+                  format: 'float32x4',
+                },
+                {
+                  shaderLocation: 2,
+                  offset: 0,
+                  format: 'float32x2'
                 }
               ],
             },

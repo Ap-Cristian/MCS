@@ -1,13 +1,9 @@
-import { vec3 } from "gl-matrix";
 import { McsObject, ObjectParameters } from "../base-classes/objectBase";
 import { Camera } from "./camera";
-// import { Cell } from "./cell";
-// import { Scene } from "./scene";
-// import { Suzanne } from "./OBSOLETE_suzanne";
 import { InputHandler } from "./inputHandler";
 import { Renderer } from "./renderer";
 import { Scene } from "./scene";
-import { CanvasLayers } from "../misc/renderUtils";
+import { CanvasLayers, DrawableObjectType } from "../misc/renderUtils";
 
 const CELLS_DEBUG = false;
 export const NUMBER_OF_CELLS_ON_ROW: number = CELLS_DEBUG ? 10 : 0;
@@ -42,7 +38,7 @@ export class Engine {
             this.inputHandler = new InputHandler();
 
             this.mainCam = new Camera(webGPUCanvas.width / webGPUCanvas.height, true);
-            this.mainCam.Z = 10;
+            this.mainCam.Z = 50;
 
             this.mainRenderer = new Renderer(
                 {
@@ -51,7 +47,7 @@ export class Engine {
                             cameras: [this.mainCam],
                             objects: [
                                 new McsObject({
-                                    type: "imported",
+                                    type: DrawableObjectType.IMPORTED,
                                     parameters: {
                                         X: 0,
                                         Y: 0,
@@ -66,6 +62,38 @@ export class Engine {
                                         ScaleZ: 1
                                     }
                                 }),
+                                // new McsObject({
+                                //     type: DrawableObjectType.CELL,
+                                //     parameters: {
+                                //         X: 20,
+                                //         Y: 30,
+                                //         Z: 0,
+
+                                //         RotX: 0,
+                                //         RotY: 0,
+                                //         RotZ: 0,
+
+                                //         ScaleX: 1,
+                                //         ScaleY: 1,
+                                //         ScaleZ: 1
+                                //     }
+                                // }),
+                                // new McsObject({
+                                //     type: DrawableObjectType.CELL,
+                                //     parameters: {
+                                //         X: -20,
+                                //         Y: 30,
+                                //         Z: 0,
+
+                                //         RotX: 0,
+                                //         RotY: 0,
+                                //         RotZ: 0,
+
+                                //         ScaleX: 1,
+                                //         ScaleY: 1,
+                                //         ScaleZ: 1
+                                //     }
+                                // }),
                             ]
                         })
                     ],

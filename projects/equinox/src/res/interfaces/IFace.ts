@@ -1,3 +1,3 @@
-export interface IFace{
-    indexes:number[]
+export interface IFace {
+    indexes: number[]
 }

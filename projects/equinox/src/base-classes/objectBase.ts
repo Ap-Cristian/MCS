@@ -1,4 +1,6 @@
-export interface ObjectParameters{
+import { DrawableObjectType } from "../misc/renderUtils";
+
+export interface ObjectParameters {
     X: number;
     Y: number;
     Z: number;
@@ -12,9 +14,9 @@ export interface ObjectParameters{
     ScaleZ: number;
 };
 
-export interface McsObj{
-    type:string,
-    parameters:ObjectParameters
+export interface McsObj {
+    type: DrawableObjectType,
+    parameters: ObjectParameters
 }
 
 export class McsObject {
@@ -25,7 +27,7 @@ export class McsObject {
     // protected drawable: Drawable;
 
     // public BoundingBox: BoundingBox = new BoundingBox(this, Color.WHITE);
-    public Type: string = '';
+    public Type: DrawableObjectType = DrawableObjectType.NOT_SET;
 
     // abstract attachDrawable(): void;
 

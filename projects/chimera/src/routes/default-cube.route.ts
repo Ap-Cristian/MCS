@@ -12,14 +12,15 @@ const CORS_HEADER = 'Access-Control-Allow-Origin';
 CellRouter.get(CELL_VERTEX_SHADER_ENDPOINT,
     async (req: Request, res: Response, next: NextFunction) => {
         let cellVertexShader: string;
-        try{
+        try {
             cellVertexShader = loadCellVertexShader();
             res.header(CORS_HEADER, '*');
 
-        }catch(ex){
+        } catch (ex) {
             console.log(`[${getCurrentDateAndTimeToString()}][DEBUG] ERR: loading CELL VERTEX SHADER failed `, ex);
+            res.statusCode = 500;
             return res.end(ex);
-    
+
         }
         return res.end(cellVertexShader);
     }
@@ -29,11 +30,11 @@ CellRouter.get(CELL_FRAGMENT_SHADER_ENDPOINT,
     async (req: Request, res: Response, next: NextFunction) => {
         const query = req.body;
         let defaultCubeVertex: string;
-        try{
+        try {
             defaultCubeVertex = loadCellFragmentShader();
-            res.header(CORS_HEADER,'*');
-        }catch(ex){
-            console.log(`[${getCurrentDateAndTimeToString()}][DEBUG] ERR: loading CELL FRAGMENT SHADER failed: `,ex);
+            res.header(CORS_HEADER, '*');
+        } catch (ex) {
+            console.log(`[${getCurrentDateAndTimeToString()}][DEBUG] ERR: loading CELL FRAGMENT SHADER failed: `, ex);
             res.statusCode = 500;
             return res.end(ex);
         }
@@ -45,10 +46,10 @@ CellRouter.get(CELL_MESH_VERTEX_ARRAY,
     async (req: Request, res: Response, next: NextFunction) => {
         const query = req.body;
         let defaultCubeMeshVertexArray;
-        try{
+        try {
             defaultCubeMeshVertexArray = getCellVertexArray();
-            res.header(CORS_HEADER,'*');
-        }catch(ex){
+            res.header(CORS_HEADER, '*');
+        } catch (ex) {
             console.log(`[${getCurrentDateAndTimeToString()}][DEBUG] ERR: loading CELL VERTEX ARRAY failed `, ex);
             res.statusCode = 500;
             return res.end(ex);
