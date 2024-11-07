@@ -4,11 +4,18 @@
 
 import { IFace } from "../res/interfaces/IFace";
 import { IVertex } from "../res/interfaces/IVertex";
-import { IDrawable, ILine } from "../res/interfaces/IDrawable";
+import { checkDeviceAvailability, ILine } from "../helpers/renderUtils";
 import { device } from "../objects/renderer";
 import { McsObject } from "./objectBase";
 import { findBoundingBoxVertexCoordinates, LineArrayToUInt32 } from "../helpers/gizmoMisc";
 
+export interface DrawableArgs {
+    _renderPipeline: GPURenderPipeline,
+    _cameraProjectionBO: GPUBuffer,
+    _vertecies?: IVertex[],
+    _faces?: IFace[],
+    _lines?: ILine[]
+}
 
 export class Drawable {
     private readonly FLOATS_PER_VERTEX: number = (4 + 4 + 2);
@@ -58,6 +65,10 @@ export class Drawable {
         return null;
     }
 
+    public get ParentObjects(): McsObject[] {
+        return this._parentsObjects
+    }
+
     // 6.16 <-- dates (2024)
     //maybe pass an mcsObject as objectParams,
     //all the renderer should do is get a list of objects and then
@@ -85,40 +96,47 @@ export class Drawable {
     // whats left in order to draw the bounding box is to iterate trough each line object inside of the parent of the bounding box drawable,\
     // and then pass them to the render pass acordingly to the vertex order (unknown yet).
 
-    constructor(drawableParams: IDrawable, parent?: McsObject, parents?: McsObject[]) {
+    // 10.1 damn its been two months
+    constructor(drawableArgs: DrawableArgs, parent?: McsObject, parents?: McsObject[]) {
+        if (!checkDeviceAvailability(device)) {
+            console.error('[DEVICE] No GPU available! Terminating process...');
+            return;
+        }
+
         if (parent) {
             this._parentObject = parent;
         } else if (parents) {
             this._parentsObjects = parents;
         }
 
+        this._vertexArray = drawableArgs._vertecies;
+        this.RenderPipeline = drawableArgs._renderPipeline;
+        this._cameraProjectionBO = drawableArgs._cameraProjectionBO;
 
-        this._vertexArray = drawableParams._vertecies;
-        this.RenderPipeline = drawableParams._renderPipeline;
-        this._cameraProjectionBO = drawableParams._cameraProjectionBO;
-
-        if (drawableParams._faces) {
-            this._facesArray = drawableParams._faces;
+        if (drawableArgs._faces) {
+            this._facesArray = drawableArgs._faces;
             this.mapFaces();
         }
 
-        if (drawableParams._lines) {
+        if (drawableArgs._lines) {
             //....map lines ---------------------------------------------------------------------------------
-            this._linesArray = drawableParams._lines;
+            this._linesArray = drawableArgs._lines;
             this.mapLines();
-
-            console.log("face_idx_data: ", this._faceIndexData)
         }
-
-        this.initOBs();
-        this.initBindGroup();
+        if (!parents) {
+            this.initOBs();
+            this.initBindGroup();
+        } else {
+            this.initOBs_Instanciated();
+            this.initBindGroup();
+        }
     };
 
+    private initOBs_Instanciated() {
+
+    }
+
     private initOBs() {
-        if (!device) {
-            console.error("Drawable: initOBs: No device available!");
-            return;
-        }
 
         this._positionBO = device.createBuffer({
             label: "DRAWABLE_POS",

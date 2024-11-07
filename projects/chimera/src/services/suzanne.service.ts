@@ -13,7 +13,6 @@ const VERT_FILE_NAME = 'suzanne.vertex.wgsl';
 const SHADERS_FOLDER_NAME = "/Suzanne/";
 const OBJ_EXPORTS_FOLDER_NAME = "/Suzanne/exports/";
 
-
 export function loadSuzanneMtl(): string {
     let mtlPath = path.join(__dirname, '../objects' + OBJ_EXPORTS_FOLDER_NAME + MTL_FILE_NAME);
     const mtlContent = fs.readFileSync(mtlPath, 'utf-8');

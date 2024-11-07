@@ -1,3 +1,6 @@
+import { Drawable } from "../base-classes/drawable";
+import { McsObj, McsObject } from "../base-classes/objectBase";
+
 export enum CanvasLayers {
     RENDER_CANVAS,
     FRAMERATE_CANVAS
@@ -22,8 +25,11 @@ export enum DrawableObjectType {
     GIZMO,
     NOT_SET
 }
-
-export interface RenderPipelineArg {
+export interface ILine {
+    startVrtIndex: number,
+    endVrtIndex: number
+}
+export interface RenderPipelineArgs {
     vertexShaderCode: string,
     fragmentShaderCode: string,
     topology: ObjectTopology,
@@ -83,7 +89,7 @@ function outputShaderCompIssues(compilationMessages: Readonly<GPUCompilationMess
     }
 }
 
-export function generateRenderPipeline(arg: RenderPipelineArg): GPURenderPipeline | null {
+export function generateRenderPipeline(arg: RenderPipelineArgs): GPURenderPipeline | null {
     if (arg.device) {
         const vertexShaderModule = arg.device.createShaderModule({
             code: arg.vertexShaderCode
@@ -153,4 +159,41 @@ export function generateRenderPipeline(arg: RenderPipelineArg): GPURenderPipelin
         } as unknown as GPURenderPipelineDescriptor)
     }
     return null;
+}
+
+export function mergeDrawables(a: Drawable, b: Drawable, cameraBO: GPUBuffer): Drawable | null {
+    let result: Drawable;
+    var parentObjects: McsObject[] = [];
+
+    if (a.RenderPipeline == b.RenderPipeline) {
+        a.ParentObjects.forEach((parent) => {
+            parentObjects.push(parent);
+        });
+        b.ParentObjects.forEach((parent) => {
+            parentObjects.push(parent);
+        })
+
+        result = new Drawable(
+            {
+                _renderPipeline: a.RenderPipeline,
+                _cameraProjectionBO: cameraBO,
+
+            },
+            null,
+            parentObjects
+        );
+    }
+    else {
+        console.error("[render_utils] Objects have to be of the same type");
+        return null;
+    }
+
+    return result
+}
+
+export function checkDeviceAvailability(device: GPUDevice): boolean {
+    if (!device) {
+        return false;
+    }
+    return true;
 }

@@ -7,17 +7,18 @@ import { IFace } from '../res/interfaces/IFace';
 import { IVertex } from '../res/interfaces/IVertex';
 import { WireframeShaderResources } from '../res/wireframe.res';
 import { BOUNDING_BOX_FACE_INDEXES, findBoundingBoxVertexCoordinates } from '../helpers/gizmoMisc';
+import { ObjectType } from 'typescript';
+import { McsObject } from '../base-classes/objectBase';
 
 export var adapter: GPUAdapter;
 export var device: GPUDevice;
-const FRAME_ERROR_PROBE_ONLY_ONCE: boolean = true;
 
+const FRAME_ERROR_PROBE_ONLY_ONCE: boolean = true;
 export interface RendererParams {
     scenes: Array<Scene>,
     activeSceneIndex: number,
     canvases: HTMLCanvasElement[]
 }
-
 export class Renderer {
     private scenes: Scene[];
     private activeSceneIdx: number = 0;
@@ -32,19 +33,20 @@ export class Renderer {
     private _passEncoder: GPURenderPassEncoder;
     private _gpuCurrentTexture: GPUTexture;
     private _RPAColorAttachment: GPURenderPassColorAttachment;
+    private _rendererTypesAndCounts = new Map();
 
     constructor(rendererParams: RendererParams) {
         this.scenes = rendererParams.scenes;
         this.initGpuDevice().then(() => {
             if (rendererParams.activeSceneIndex >= 0 && rendererParams.activeSceneIndex < this.scenes.length) {
                 this.activeSceneIdx = rendererParams.activeSceneIndex;
-                this.initCameraProjBuffer();
+                this.initCameraProjectionBO();
                 this.initContexts(rendererParams.canvases);
                 this.initRenderPassDescriptor(rendererParams.canvases[CanvasLayers.RENDER_CANVAS]);
 
                 this.configRenderingContext();
                 this.createDrawablesFromSceneObjects();
-                // this.updateCamera(); // might not be 1needed
+                // this.updateCamera(); // might not be needed
             }
             else {
                 console.error("Renderer: Active scene out of scene array range.");
@@ -97,7 +99,7 @@ export class Renderer {
         )
     }
 
-    private initCameraProjBuffer() {
+    private initCameraProjectionBO() {
         var cameraProjArray = this.scenes[this.activeSceneIdx].ActiveCamera.getProjectionArray();
         this._cameraProjectionBO = device.createBuffer({
             label: "CAMERA_BUFFER",
@@ -179,7 +181,6 @@ export class Renderer {
             fragmentShaderCode: WireframeShaderResources.getInstance().fragmentCode,
             topology: ObjectTopology.LINE_LIST
         });
-        console.log()
         var boundingBox = new Drawable({
             _cameraProjectionBO: this._cameraProjectionBO,
             _vertecies: boundingBoxVertecies,
@@ -187,7 +188,6 @@ export class Renderer {
             _renderPipeline: boundingBoxRenderPipeline
         }, boundingBoxParentDrawable.Object);
 
-        console.log("BB_DRW: ", boundingBox)
         return boundingBox;
     }
 
@@ -197,10 +197,38 @@ export class Renderer {
 
         if (activeSceneObjects) {
             activeSceneObjects.forEach((object) => {
+                this._rendererTypesAndCounts.has(object.Type) ?
+                    this._rendererTypesAndCounts.set(object.Type, this._rendererTypesAndCounts.get(object.Type) + 1) :
+                    this._rendererTypesAndCounts.set(object.Type, 1);
+            });
+            this._rendererTypesAndCounts.forEach((value, key) => {
+                var objectTypeArray: McsObject[] = [];
+
+                activeSceneObjects.forEach((object) => {
+                    if (object.Type === value) {
+                        objectTypeArray.push(object);
+                    }
+                })
+
+                objectTypeArray.forEach((object) => {
+
+                })
+                //iterate trough objectTypeArray and generate its instanced BO
+                //we have: 
+                // --object_type
+                // --object_type_count
+                // --object_of_type_array
+
+                //we need:
+                // --bo with the length object_type_count containing instanced copies of object
+                // change with simple for
+
+            });
+
+            activeSceneObjects.forEach((object) => {
                 var drawableRenderPipeline: GPURenderPipeline;
                 var facesIndexes: IFace[];
                 var vertexArray: IVertex[];
-
                 // transform to drawables
                 switch (object.Type) {
                     case DrawableObjectType.CELL: {

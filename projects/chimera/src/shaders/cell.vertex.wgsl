@@ -178,6 +178,6 @@ fn mainVertex(input: VertexInput) -> VertexOutput {
 
     output.Position = cameraViewProjectionMatrix * rotationTranslationMatrix  * scaleMatrix ;
     output.fragUV = input.uv;
-    output.fragPosition = 0.5 * (input.position + vec4(1.0));
+    output.fragPosition = vec4(0,0,1,0);
     return output;
 }

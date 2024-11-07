@@ -1,4 +1,5 @@
 import { McsObject } from "../base-classes/objectBase";
+import { DrawableObjectType } from "../helpers/renderUtils";
 import { Camera } from "./camera";
 
 export interface SceneParams {
@@ -13,6 +14,7 @@ export class Scene {
     constructor(sceneParams: SceneParams) {
         this._objects = sceneParams.objects ? sceneParams.objects : null;
         this._cameras = sceneParams.cameras;
+        this.spawnInitialCells(0);
     }
 
     public add(objectsToAdd?: McsObject | Array<McsObject>) {
@@ -51,6 +53,27 @@ export class Scene {
         //         ScaleZ:0.1
         //     }));
         // })
+        var currentX = 0;
+        var currentY = 0;
+        const DISTANCE_BETWEEN_CELLS = 2;
+
+        for (var i = 0; i < 10; i++) {
+            this.add(new McsObject({
+                type: DrawableObjectType.CELL,
+                parameters: {
+                    X: currentX,
+                    Y: currentY,
+                    Z: 0,
+                    RotX: 0,
+                    RotY: 0,
+                    RotZ: 0,
+                    ScaleX: 1,
+                    ScaleY: 1,
+                    ScaleZ: 1
+                }
+            }));
+            currentX += DISTANCE_BETWEEN_CELLS;
+        }
     }
 
     public set Subject(value: McsObject) {

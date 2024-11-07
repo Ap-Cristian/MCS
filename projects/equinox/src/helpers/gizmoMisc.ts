@@ -1,5 +1,5 @@
 import { Drawable } from "../base-classes/drawable";
-import { ILine } from "../res/interfaces/IDrawable";
+import { ILine } from "./renderUtils";
 import { IVertex } from "../res/interfaces/IVertex";
 
 // export const BOUNDING_BOX_FACE_INDEXES: IFace[] = new Array<IFace>([

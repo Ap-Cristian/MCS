@@ -62,38 +62,6 @@ export class Engine {
                                         ScaleZ: 1
                                     }
                                 }),
-                                new McsObject({
-                                    type: DrawableObjectType.CELL,
-                                    parameters: {
-                                        X: 20,
-                                        Y: 30,
-                                        Z: 0,
-
-                                        RotX: 0,
-                                        RotY: 0,
-                                        RotZ: 0,
-
-                                        ScaleX: 1,
-                                        ScaleY: 1,
-                                        ScaleZ: 1
-                                    }
-                                }),
-                                new McsObject({
-                                    type: DrawableObjectType.CELL,
-                                    parameters: {
-                                        X: -20,
-                                        Y: 30,
-                                        Z: 0,
-
-                                        RotX: 0,
-                                        RotY: 0,
-                                        RotZ: 0,
-
-                                        ScaleX: 1,
-                                        ScaleY: 1,
-                                        ScaleZ: 1
-                                    }
-                                }),
                             ]
                         })
                     ],
