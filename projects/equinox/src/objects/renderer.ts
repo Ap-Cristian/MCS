@@ -81,8 +81,10 @@ export class Renderer {
 
     private async initGpuDevice() {
         if (navigator.gpu) {
+            console.log(navigator.gpu)
             const adapter = await navigator.gpu.requestAdapter();
             device = await adapter.requestDevice();
+            console.log(device);
         }
         else {
             console.error("WebGPU is not available for your browser. Please check compatibility.")
@@ -141,7 +143,7 @@ export class Renderer {
         if (device) {
             this.updateCamera();
         } else {
-            console.warn("Renderer: Update(): Device is still loading...");
+            // console.warn("Renderer: Update(): Device is still loading...");
         }
         // this.updateObjectsDrawables();
     }
@@ -169,7 +171,7 @@ export class Renderer {
             this.popErrorScopes();
         }
         else {
-            console.warn("Renderer: Draw(): Device is still loading...");
+            // console.warn("Renderer: Draw(): Device is still loading...");
         }
     }
 

@@ -94,13 +94,8 @@ export class ObjFileParser {
                 uv: uv[i]
 
             }
-            // console.log(pos[i])
             this.vertecies.push(vertex);
         }
-
-        // console.log(pos.length);
-        // console.log(norm.length);
-        // console.log(uv.length);
 
     }
 

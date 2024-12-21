@@ -179,7 +179,6 @@ export function mergeDrawables(a: Drawable, b: Drawable, cameraBO: GPUBuffer): D
                 _cameraProjectionBO: cameraBO,
 
             },
-            null,
             parentObjects
         );
     }

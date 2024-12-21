@@ -97,15 +97,15 @@ export class Drawable {
     // and then pass them to the render pass acordingly to the vertex order (unknown yet).
 
     // 10.1 damn its been two months
-    constructor(drawableArgs: DrawableArgs, parent?: McsObject, parents?: McsObject[]) {
+    constructor(drawableArgs: DrawableArgs, parents?: McsObject[] | McsObject) {
         if (!checkDeviceAvailability(device)) {
             console.error('[DEVICE] No GPU available! Terminating process...');
             return;
         }
 
-        if (parent) {
-            this._parentObject = parent;
-        } else if (parents) {
+        if (!Array.isArray(parents)) {
+            this._parentObject = parents;
+        } else if (Array.isArray(parents)) {
             this._parentsObjects = parents;
         }
 
@@ -123,17 +123,39 @@ export class Drawable {
             this._linesArray = drawableArgs._lines;
             this.mapLines();
         }
-        if (!parents) {
+
+        if (!Array.isArray(parents)) {
             this.initOBs();
             this.initBindGroup();
-        } else {
+        } else if (Array.isArray(parents)) {
             this.initOBs_Instanciated();
             this.initBindGroup();
         }
+
     };
 
     private initOBs_Instanciated() {
-
+        this._positionBO = device.createBuffer({
+            label: "DRAWABLES_POS_INSTANCIATED",
+            size: this._parentsObjects.length * this._parentsObjects[0].Position.length * Float32Array.BYTES_PER_ELEMENT,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+        });
+        this._scaleBO = device.createBuffer({
+            label: "DRAWABLES_SCAL_INSTANCIATED",
+            size: this._parentsObjects.length * this._parentsObjects[0].Scale.length * Float32Array.BYTES_PER_ELEMENT,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+        });
+        this._rotationBO = device.createBuffer({
+            label: "DRAWABLES_ROT_INSTANCIATED",
+            size: this._parentsObjects.length * this._parentsObjects[0].Rotation.length * Float32Array.BYTES_PER_ELEMENT,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+        });
+        this._verticesBO = device.createBuffer({
+            label: "DRAWABLE_VTC",
+            size: this.VertexArray.length * this.VERTECIES_STRIDE,
+            usage: GPUBufferUsage.VERTEX,
+            mappedAtCreation: true
+        });
     }
 
     private initOBs() {
