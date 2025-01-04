@@ -15,6 +15,7 @@ To run just use
 ```
 npm run start
 ```
+** Chimera should be started first **
 
 
 # Changelog:
