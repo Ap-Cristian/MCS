@@ -1,10 +1,10 @@
 import { CellShaderResources } from "./res/cell.res";
 import { SuzanneShaderResources } from "./res/suzanne.res";
 import { WireframeShaderResources } from "./res/wireframe.res";
-
 import { cellWatcherAPI } from "./api/cell-updater.api";
 import { Engine } from "./objects/engine";
-import "./style.scss";
+// import "./style.scss";
+import "./style.css";
 
 function initAppResources(){
     var cellShaderContainer = CellShaderResources.getInstance();

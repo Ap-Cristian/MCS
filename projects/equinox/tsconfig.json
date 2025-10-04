@@ -1,20 +1,25 @@
 {
   "compilerOptions": {
-    "module": "ES6",
-    "target": "ES6",
-    "outDir": "dist",
-    "moduleResolution": "node",
-    "noImplicitAny": true,
-    "esModuleInterop": true,
-    "allowJs": true,
-    "sourceMap": true,
-    "types": ["@webgpu/types"],
-    "lib": [
-      "ES2022",
-      "ES2015",
-      "dom"
-    ]
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "@webgpu/types"],
+    "skipLibCheck": true,
+    /* Bundler mode */
+    "noEmit": true,
+    "moduleResolution": "bundler",
+    /* "allowImportingTsExtensions": true, 
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "strict": true,
+
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+    */
   },
-
+  "include": ["src"]
 }
-

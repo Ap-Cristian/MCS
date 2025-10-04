@@ -10,8 +10,6 @@ export const NUMBER_OF_CELLS_ON_ROW: number = CELLS_DEBUG ? 10 : 0;
 export const NUMBER_OF_CELLS: number = NUMBER_OF_CELLS_ON_ROW ** 3;
 
 export class Engine {
-    // private webGPUCanvas:HTMLCanvasElement;
-    // private frameRateCanvas:HTMLCanvasElement;
     private canvases: HTMLCanvasElement[] = new Array<HTMLCanvasElement>(2); // 0 - WebGPU - canvas, 1 - framerate canvas
     private scenes: Scene[] = new Array<Scene>();
     private mainCam: Camera;
