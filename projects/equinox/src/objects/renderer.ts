@@ -1,280 +1,175 @@
-import { Scene } from './scene';
-import { Drawable } from '../base-classes/drawable';
-import { CellShaderResources } from '../res/cell.res';
-import { CanvasLayers, createRenderPassDescriptor, depthTextureView, DrawableObjectType, generateRenderPipeline, ObjectTopology } from '../helpers/renderUtils';
-import { SuzanneShaderResources } from '../res/suzanne.res';
-import { IFace } from '../res/interfaces/IFace';
-import { IVertex } from '../res/interfaces/IVertex';
-import { WireframeShaderResources } from '../res/wireframe.res';
-import { BOUNDING_BOX_FACE_INDEXES, findBoundingBoxVertexCoordinates } from '../helpers/gizmoMisc';
-import { ObjectType } from 'typescript';
-import { McsObject } from '../base-classes/objectBase';
+import { Scene } from "./scene";
+import {
+  canvasCreateTexture,
+  CanvasLayers,
+  createRenderPassDescriptor,
+  depthTextureView,
+} from "../helpers/renderUtils";
+import { Drawable } from "../base-classes/drawable";
+import { CellGridDrawable } from "./drawables/grid/cellGrid";
 
 export var adapter: GPUAdapter;
 export var device: GPUDevice;
 
-const FRAME_ERROR_PROBE_ONLY_ONCE: boolean = true;
 export interface RendererParams {
-    scenes: Array<Scene>,
-    activeSceneIndex: number,
-    canvases: HTMLCanvasElement[]
+  scenes: Array<Scene>;
+  activeSceneIdx: number;
+  canvases: HTMLCanvasElement[];
 }
+
 export class Renderer {
-    private scenes: Scene[];
-    private activeSceneIdx: number = 0;
-    private drawables: Drawable[] = new Array<Drawable>();
-    private gizmos: Drawable[] = new Array<Drawable>();
+  private scenes: Scene[];
+  private activeSceneIdx: number = 0;
+  private newDrawables: Drawable[] = new Array<Drawable>();
 
-    private _cameraProjectionBO: GPUBuffer;
-    private _renderPassDescriptor: GPURenderPassDescriptor;
-    private _commandEncoder: GPUCommandEncoder;
-    private _renderContext: GPUCanvasContext;
-    private _framerateContext: CanvasRenderingContext2D;
-    private _passEncoder: GPURenderPassEncoder;
-    private _gpuCurrentTexture: GPUTexture;
-    private _RPAColorAttachment: GPURenderPassColorAttachment;
-    private _rendererTypesAndCounts = new Map();
+  private cameraProjectionArray: Float32Array;
+  private renderPassDescriptor: GPURenderPassDescriptor;
+  private commandEncoder: GPUCommandEncoder;
+  private renderContext: GPUCanvasContext;
+  private passEncoder: GPURenderPassEncoder;
+  private gpuCurrentTexture: GPUTexture;
+  private RPAColorAttachment: GPURenderPassColorAttachment;
+  private depthTexture: GPUTexture;
+  private depthTextureView: GPUTextureView;
 
-    constructor(rendererParams: RendererParams) {
-        this.scenes = rendererParams.scenes;
-        this.initGpuDevice().then(() => {
-            if (rendererParams.activeSceneIndex >= 0 && rendererParams.activeSceneIndex < this.scenes.length) {
-                this.activeSceneIdx = rendererParams.activeSceneIndex;
-                this.initCameraProjectionBO();
-                this.initContexts(rendererParams.canvases);
-                this.initRenderPassDescriptor(rendererParams.canvases[CanvasLayers.RENDER_CANVAS]);
+  private initRenderer(rendererParams: RendererParams) {
+    this.activeSceneIdx = rendererParams.activeSceneIdx;
+    this.initContexts(rendererParams.canvases);
+    this.initRenderPassDescriptor(
+      rendererParams.canvases[CanvasLayers.RENDER_CANVAS],
+    );
+    this.RPAColorAttachment = (
+      this.renderPassDescriptor.colorAttachments as [
+        GPURenderPassColorAttachment,
+      ]
+    )[0];
+    this.initRenderingContext();
+    this.createDrawablesFromSceneObjects();
+  }
 
-                this.configRenderingContext();
-                this.createDrawablesFromSceneObjects();
-                // this.updateCamera(); // might not be needed
-            }
-            else {
-                console.error("Renderer: Active scene out of scene array range.");
-                return;
-            }
-        });
+  constructor(rendererParams: RendererParams) {
+    this.scenes = rendererParams.scenes;
+    this.cameraProjectionArray =
+      this.scenes[this.activeSceneIdx].ActiveCamera.getProjectionArray();
+
+    if (
+      rendererParams.activeSceneIdx < 0 ||
+      rendererParams.activeSceneIdx > this.scenes.length
+    )
+      throw new Error(
+        `Renderer: Active scene ${rendererParams.activeSceneIdx} out of scene array range.`,
+      );
+
+    this.initGpuDevice().then(() => {
+      this.initRenderer(rendererParams);
+    });
+  }
+
+  private pushErrorScopes() {
+    device.pushErrorScope("validation");
+    device.pushErrorScope("out-of-memory");
+    device.pushErrorScope("internal");
+  }
+
+  private popErrorScopes() {
+    device.popErrorScope().then((ex) => {
+      if (ex) {
+        console.error(`INTERNAL: ${ex.message}`);
+      }
+    });
+    device.popErrorScope().then((ex) => {
+      if (ex) {
+        console.error(`OUT_OF_MEM: ${ex.message}`);
+      }
+    });
+    device.popErrorScope().then((ex) => {
+      if (ex) {
+        console.error(`INTERNAL: ${ex.message}`);
+      }
+    });
+  }
+
+  private async initGpuDevice() {
+    if (navigator.gpu) {
+      const adapter = await navigator.gpu.requestAdapter({
+        powerPreference: "high-performance",
+      });
+      device = await adapter.requestDevice();
+      console.log(device);
+    } else {
+      console.error(
+        "WebGPU is not available for your browser. Please check compatibility.",
+      );
     }
+  }
 
-    private pushErrorScopes() {
-        device.pushErrorScope("validation")
-        device.pushErrorScope("out-of-memory")
-        device.pushErrorScope("internal")
+  private initRenderingContext() {
+    this.renderContext.configure({
+      device: device,
+      format: navigator.gpu.getPreferredCanvasFormat(),
+      alphaMode: "premultiplied",
+    });
+  }
+
+  private updateCamera() {
+    var activeSceneCamera = this.scenes[this.activeSceneIdx].ActiveCamera;
+    this.cameraProjectionArray.set(activeSceneCamera.getProjectionArray(), 0);
+  }
+
+  private initRenderPassDescriptor(canvas: HTMLCanvasElement) {
+    this.depthTexture = canvasCreateTexture(
+      device,
+      canvas,
+      GPUTextureUsage.RENDER_ATTACHMENT,
+    );
+    this.depthTextureView = depthTextureView(this.depthTexture);
+    this.renderPassDescriptor = createRenderPassDescriptor(
+      this.depthTextureView,
+    );
+  }
+
+  private initContexts(canvasLayers: HTMLCanvasElement[]) {
+    this.renderContext = canvasLayers[CanvasLayers.RENDER_CANVAS].getContext(
+      "webgpu",
+    ) as unknown as GPUCanvasContext;
+  }
+
+  public update() {
+    if (device) {
+      this.updateCamera();
     }
+  }
 
-    private popErrorScopes() {
-        device.popErrorScope().then((ex) => {
-            if (ex) {
-                console.error(`INTERNAL: ${ex.message}`);
-            }
-        })
-        device.popErrorScope().then((ex) => {
-            if (ex) {
-                console.error(`OUT_OF_MEM: ${ex.message}`);
-            }
-        })
-        device.popErrorScope().then((ex) => {
-            if (ex) {
-                console.error(`INTERNAL: ${ex.message}`);
-            }
-        })
+  public draw() {
+    if (device) {
+      this.pushErrorScopes();
+      this.commandEncoder = device.createCommandEncoder();
+
+      this.gpuCurrentTexture = this.renderContext.getCurrentTexture();
+      this.RPAColorAttachment.view = this.gpuCurrentTexture.createView();
+
+      this.passEncoder = this.commandEncoder.beginRenderPass(
+        this.renderPassDescriptor,
+      );
+      this.newDrawables.forEach((drawable) => {
+        drawable.Draw(this.passEncoder);
+      });
+      this.passEncoder.end();
+      device.queue.submit([this.commandEncoder.finish()]);
+
+      this.popErrorScopes();
+    } else {
+      console.warn("Renderer: Draw(): Device is still loading...");
     }
+  }
 
-    private async initGpuDevice() {
-        if (navigator.gpu) {
-            console.log(navigator.gpu)
-            const adapter = await navigator.gpu.requestAdapter();
-            device = await adapter.requestDevice();
-            console.log(device);
-        }
-        else {
-            console.error("WebGPU is not available for your browser. Please check compatibility.")
-        }
-    }
-
-    private configRenderingContext() {
-        this._renderContext.configure(
-            {
-                device: device,
-                format: navigator.gpu.getPreferredCanvasFormat(),
-                alphaMode: 'premultiplied',
-            }
-        )
-    }
-
-    private initCameraProjectionBO() {
-        var cameraProjArray = this.scenes[this.activeSceneIdx].ActiveCamera.getProjectionArray();
-        this._cameraProjectionBO = device.createBuffer({
-            label: "CAMERA_BUFFER",
-            size: cameraProjArray.length * Float32Array.BYTES_PER_ELEMENT,
-            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM
-        });
-    }
-
-    private updateCamera() {
-        var activeSceneCamera = this.scenes[this.activeSceneIdx].ActiveCamera;
-
-        var _projArr = activeSceneCamera.getProjectionArray();
-
-        device.queue.writeBuffer(
-            this._cameraProjectionBO,
-            0,
-            _projArr.buffer,
-            _projArr.byteOffset,
-            _projArr.byteLength
-        )
-
-    }
-    //GPU rendering init
-    private initRenderPassDescriptor(canvas: HTMLCanvasElement) {
-        this._renderPassDescriptor = createRenderPassDescriptor(depthTextureView(device, canvas));
-    }
-
-    private initContexts(canvasLayers: HTMLCanvasElement[]) {
-        this._renderContext = canvasLayers[CanvasLayers.RENDER_CANVAS].getContext("webgpu") as unknown as GPUCanvasContext;
-        this._framerateContext = canvasLayers[CanvasLayers.FRAMERATE_CANVAS].getContext("2d") as unknown as CanvasRenderingContext2D;
-    }
-    //
-
-    private updateObjects() {
-
-    }
-
-    public update() {
-        if (device) {
-            this.updateCamera();
-        } else {
-            // console.warn("Renderer: Update(): Device is still loading...");
-        }
-        // this.updateObjectsDrawables();
-    }
-
-    public draw() {
-        if (device) {
-            this.pushErrorScopes();
-
-            this._commandEncoder = device.createCommandEncoder();
-            this._gpuCurrentTexture = this._renderContext.getCurrentTexture();
-            this._RPAColorAttachment = (this._renderPassDescriptor.colorAttachments as [GPURenderPassColorAttachment])[0];
-            this._RPAColorAttachment.view = this._gpuCurrentTexture.createView();
-
-            this._passEncoder = this._commandEncoder.beginRenderPass(this._renderPassDescriptor);
-            this.drawables.forEach((drawable) => {
-                drawable.draw(this._passEncoder, this._cameraProjectionBO);
-            })
-            this.gizmos.forEach((gizmo) => {
-                gizmo.draw(this._passEncoder, this._cameraProjectionBO);
-            })
-
-            this._passEncoder.end();
-            device.queue.submit([this._commandEncoder.finish()]);
-
-            this.popErrorScopes();
-        }
-        else {
-            // console.warn("Renderer: Draw(): Device is still loading...");
-        }
-    }
-
-    private createBoundingBox(boundingBoxParentDrawable: Drawable): Drawable {
-        var boundingBoxVertecies = findBoundingBoxVertexCoordinates(boundingBoxParentDrawable);
-        const boundingBoxRenderPipeline = generateRenderPipeline({
-            device: device,
-            vertexShaderCode: WireframeShaderResources.getInstance().vertexCode,
-            fragmentShaderCode: WireframeShaderResources.getInstance().fragmentCode,
-            topology: ObjectTopology.LINE_LIST
-        });
-        var boundingBox = new Drawable({
-            _cameraProjectionBO: this._cameraProjectionBO,
-            _vertecies: boundingBoxVertecies,
-            _lines: BOUNDING_BOX_FACE_INDEXES,
-            _renderPipeline: boundingBoxRenderPipeline
-        }, boundingBoxParentDrawable.Object);
-
-        return boundingBox;
-    }
-
-    private createDrawablesFromSceneObjects() {
-        var activeScene = this.scenes[this.activeSceneIdx];
-        var activeSceneObjects = activeScene.Objects;
-
-        if (activeSceneObjects) {
-            activeSceneObjects.forEach((object) => {
-                this._rendererTypesAndCounts.has(object.Type) ?
-                    this._rendererTypesAndCounts.set(object.Type, this._rendererTypesAndCounts.get(object.Type) + 1) :
-                    this._rendererTypesAndCounts.set(object.Type, 1);
-            });
-            this._rendererTypesAndCounts.forEach((value, key) => {
-                var objectTypeArray: McsObject[] = [];
-
-                activeSceneObjects.forEach((object) => {
-                    if (object.Type === value) {
-                        objectTypeArray.push(object);
-                    }
-                })
-
-                objectTypeArray.forEach((object) => {
-
-                })
-                //iterate trough objectTypeArray and generate its instanced BO
-                //we have: 
-                // --object_type
-                // --object_type_count
-                // --object_of_type_array
-
-                //we need:
-                // --bo with the length object_type_count containing instanced copies of object
-                // change with simple for
-
-            });
-
-            activeSceneObjects.forEach((object) => {
-                var drawableRenderPipeline: GPURenderPipeline;
-                var facesIndexes: IFace[];
-                var vertexArray: IVertex[];
-                // transform to drawables
-                switch (object.Type) {
-                    case DrawableObjectType.CELL: {
-                        var cellShaderResources = CellShaderResources.getInstance();
-
-                        drawableRenderPipeline = generateRenderPipeline({
-                            device: device,
-                            vertexShaderCode: CellShaderResources.getInstance().VertexCode,
-                            fragmentShaderCode: CellShaderResources.getInstance().FragmentCode,
-                            topology: ObjectTopology.TRIANGLE_LIST
-                        })
-                        vertexArray = cellShaderResources.VertexArray;
-                        break;
-                    }
-                    case DrawableObjectType.IMPORTED: {
-                        drawableRenderPipeline = generateRenderPipeline({
-                            device: device,
-                            vertexShaderCode: SuzanneShaderResources.getInstance().vertexCode,
-                            fragmentShaderCode: SuzanneShaderResources.getInstance().fragmentCode,
-                            topology: ObjectTopology.TRIANGLE_LIST
-                        });
-                        vertexArray = SuzanneShaderResources.getInstance().vertexArray;
-                        facesIndexes = SuzanneShaderResources.getInstance().faces;
-                        break;
-                    }
-                    case DrawableObjectType.NOT_SET: {
-                        console.error(`Renderer: createDrawableFromSceneObjects(): Object type not set. ${object}`);
-                        break;
-                    }
-                    default: {
-                        break;
-                    }
-                }
-
-                var currentDrawable = new Drawable({
-                    _cameraProjectionBO: this._cameraProjectionBO,
-                    _vertecies: vertexArray,
-                    _faces: facesIndexes ? facesIndexes : null,
-                    _renderPipeline: drawableRenderPipeline
-                }, object);
-
-                this.drawables.push(currentDrawable);
-                this.gizmos.push(this.createBoundingBox(currentDrawable));
-            });
-        }
-    }
+  private createDrawablesFromSceneObjects() {
+    const activeSceneGrid = this.scenes[this.activeSceneIdx].Grid;
+    const grid = new CellGridDrawable(
+      this.cameraProjectionArray,
+      activeSceneGrid,
+      "main_grid",
+    );
+    this.newDrawables.push(grid);
+  }
 }

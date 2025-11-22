@@ -1,336 +1,145 @@
-// if indexBuffer is not set, normal draw is asumed, branch otherwise
-// NO INSTANCED drawing SUPPORT!
-// add instancing somewhere rather than the renderer
-
-import { IFace } from "../res/interfaces/IFace";
-import { IVertex } from "../res/interfaces/IVertex";
-import { checkDeviceAvailability, ILine } from "../helpers/renderUtils";
+import { checkDeviceAvailability } from "../helpers/renderUtils";
 import { device } from "../objects/renderer";
-import { McsObject } from "./objectBase";
-import { findBoundingBoxVertexCoordinates, LineArrayToUInt32 } from "../helpers/gizmoMisc";
 
-export interface DrawableArgs {
-    _renderPipeline: GPURenderPipeline,
-    _cameraProjectionBO: GPUBuffer,
-    _vertecies?: IVertex[],
-    _faces?: IFace[],
-    _lines?: ILine[]
+// newDrawable needs:
+// at least a vertexArray
+// or a face array
+// or line array.
+// without these it doesn't instanciate.
+
+// ShaderResources
+// values: Array containing the actual values we want to pass for a single uniform
+// byteSize: byte size of uniform?
+// type: any GPUBufferUsage type for the uniform
+// label: the uniform label
+
+export interface ShaderResource {
+  /** @internal Resource values. Order needs to match group and binding in shader. */
+  values: Float32Array | Float64Array;
+  byteSize: number;
+  type: number;
+  label: string;
+  dirty?: boolean;
+}
+
+export interface Vertecies {
+  vertecies_f32: Float32Array;
+  number: number;
+  perVertexLength: number;
 }
 
 export class Drawable {
-    private readonly FLOATS_PER_VERTEX: number = (4 + 4 + 2);
-    private readonly VERTECIES_STRIDE = this.FLOATS_PER_VERTEX * 4;
-    private readonly NUMBER_OF_INSTANCES: number;
+  private bufferObjects: Array<GPUBuffer> = [];
+  private bufferResources: Array<ShaderResource> = [];
+  private name: string = "";
 
-    private _parentObject?: McsObject;
-    private _parentsObjects?: McsObject[];
+  protected vertecies: Vertecies;
+  protected vertexBO: GPUBuffer;
+  protected renderPipeline: GPURenderPipeline;
+  protected bindGroup: GPUBindGroup;
+  protected bindGroupInit: boolean = false;
 
-    private _faceIndexData?: Uint32Array;
-    private _vertexArray: IVertex[];
-    private _facesArray?: IFace[];
-    private _linesArray?: ILine[];
-
-    private _positionBO: GPUBuffer;
-    private _scaleBO: GPUBuffer;
-    private _rotationBO: GPUBuffer;
-    private _verticesBO: GPUBuffer;
-    private _facesIndexBO?: GPUBuffer;
-    private _cameraProjectionBO: GPUBuffer;
-
-    private _uniformBindGroup: GPUBindGroup;
-
-    public RenderPipeline: GPURenderPipeline;
-    public set VertexArray(value: IVertex[]) {
-        this._vertexArray = value;
-        //tbi: write to verteciesBO
+  protected get ShouldRedraw(): boolean {
+    for (let i = 0; i < this.bufferResources.length; i++) {
+      if (this.bufferResources[i].dirty === true) {
+        console.log("Draw");
+        return true;
+      }
     }
+    return false;
+  }
 
-    public get VertexArray() {
-        return this._vertexArray;
+  constructor(
+    shaderResources: Array<ShaderResource>,
+    vertecies: Vertecies,
+    renderPipeline: GPURenderPipeline,
+    drawableName: string,
+  ) {
+    if (!checkDeviceAvailability(device)) {
+      console.error("[DEVICE][DRAWABLE] No GPU available");
+      return;
     }
+    this.bufferResources = shaderResources;
+    this.renderPipeline = renderPipeline;
+    this.name = drawableName;
+    this.vertecies = vertecies;
+    this.initBufferObjects();
+    this.initBindGroup();
+  }
 
-    public set FacesArray(value: IFace[]) {
-        this._facesArray = value;
-        //tbi: update verteciesBO
+  private initBufferObjects() {
+    this.bufferResources.forEach((resource) => {
+      this.bufferObjects.push(
+        device.createBuffer({
+          size: resource.byteSize,
+          usage: resource.type,
+          label: resource.label,
+        }),
+      );
+    });
+    this.vertexBO = device.createBuffer({
+      size:
+        this.vertecies.vertecies_f32.length * Float32Array.BYTES_PER_ELEMENT,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX,
+      label: `${this.name}-vertexBuffer`,
+    });
+    const vertecies_f32 = this.vertecies.vertecies_f32;
+
+    device.queue.writeBuffer(
+      this.vertexBO,
+      0,
+      vertecies_f32.buffer,
+      vertecies_f32.byteOffset,
+      vertecies_f32.byteLength,
+    );
+  }
+
+  private initBindGroup() {
+    var bindingIdx = 0;
+    var entries: Array<GPUBindGroupEntry> = [];
+    this.bufferObjects.forEach((bo) => {
+      entries.push({
+        binding: bindingIdx++,
+        resource: {
+          buffer: bo,
+          label: `${bo.label}-bind-group-entry`,
+        },
+      });
+    });
+    this.bindGroup = device.createBindGroup({
+      layout: this.renderPipeline.getBindGroupLayout(0), //shady
+      entries: entries,
+      label: `${this.name}-bind-group`,
+    });
+    if (this.bindGroup) this.bindGroupInit = true;
+  }
+
+  protected flushBufferObjects() {
+    for (let i = 0; i < this.bufferObjects.length; i++) {
+      device.queue.writeBuffer(
+        this.bufferObjects[i],
+        0,
+        this.bufferResources[i].values.buffer,
+        this.bufferResources[i].values.byteOffset,
+        this.bufferResources[i].values.byteLength,
+      );
     }
+  }
 
-    public get FacesArray() {
-        return this._facesArray;
+  protected resetDirtyFlags() {
+    for (let i = 0; i < this.bufferResources.length; i++) {
+      this.bufferResources[i].dirty = false;
     }
+  }
 
-    public get Object(): McsObject | null {
-        if (this._parentObject) {
-            return this._parentObject;
-        }
-        return null;
+  public Draw(passEncoder: GPURenderPassEncoder) {
+    if (this.bindGroupInit) {
+      this.flushBufferObjects();
+      passEncoder.setVertexBuffer(0, this.vertexBO);
+      passEncoder.setPipeline(this.renderPipeline);
+      passEncoder.setBindGroup(0, this.bindGroup);
+      passEncoder.draw(this.vertecies.number, 0, 0);
+      this.resetDirtyFlags();
     }
-
-    public get ParentObjects(): McsObject[] {
-        return this._parentsObjects
-    }
-
-    // 6.16 <-- dates (2024)
-    //maybe pass an mcsObject as objectParams,
-    //all the renderer should do is get a list of objects and then
-    //create the coresponding drawables in order to avoid clutter.
-    //this class will be the result of the renderer object to drawable convertor
-    //the engine user will use objects not with drawables!
-    //drawables should be kept behind the scenes as much as possible
-    //
-    //renderer only gets a list of objects and a camera (maybe add these to a scene)
-
-    // 7.16
-    // in order to treat instancing, _parentsObjects property was added.
-    // the plan is to check whether an array of parrents is given at creation point,
-    // and if true, instance the given object. All of the parents have to be of the same type.
-    // This cannot be avoided due to the requirement of drawing many copies of the same object,
-    // which would render (hah get it) iterating trough an object array every frame very slow.
-    // !! modifying the shader source at runtime might be required in order to support instancing for all objects.
-
-    // 7.23 
-    // create a pipeline creation object/function that takes as arguments the source code for 
-    // the object shader. The pipeline creation process is exactly (kinda lost what i wrote here, oh well)
-
-    // 8.19 
-    // long time no see,
-    // whats left in order to draw the bounding box is to iterate trough each line object inside of the parent of the bounding box drawable,\
-    // and then pass them to the render pass acordingly to the vertex order (unknown yet).
-
-    // 10.1 damn its been two months
-    constructor(drawableArgs: DrawableArgs, parents?: McsObject[] | McsObject) {
-        if (!checkDeviceAvailability(device)) {
-            console.error('[DEVICE] No GPU available! Terminating process...');
-            return;
-        }
-
-        if (!Array.isArray(parents)) {
-            this._parentObject = parents;
-        } else if (Array.isArray(parents)) {
-            this._parentsObjects = parents;
-        }
-
-        this._vertexArray = drawableArgs._vertecies;
-        this.RenderPipeline = drawableArgs._renderPipeline;
-        this._cameraProjectionBO = drawableArgs._cameraProjectionBO;
-
-        if (drawableArgs._faces) {
-            this._facesArray = drawableArgs._faces;
-            this.mapFaces();
-        }
-
-        if (drawableArgs._lines) {
-            //....map lines ---------------------------------------------------------------------------------
-            this._linesArray = drawableArgs._lines;
-            this.mapLines();
-        }
-
-        if (!Array.isArray(parents)) {
-            this.initOBs();
-            this.initBindGroup();
-        } else if (Array.isArray(parents)) {
-            this.initOBs_Instanciated();
-            this.initBindGroup();
-        }
-
-    };
-
-    private initOBs_Instanciated() {
-        this._positionBO = device.createBuffer({
-            label: "DRAWABLES_POS_INSTANCIATED",
-            size: this._parentsObjects.length * this._parentsObjects[0].Position.length * Float32Array.BYTES_PER_ELEMENT,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        });
-        this._scaleBO = device.createBuffer({
-            label: "DRAWABLES_SCAL_INSTANCIATED",
-            size: this._parentsObjects.length * this._parentsObjects[0].Scale.length * Float32Array.BYTES_PER_ELEMENT,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        });
-        this._rotationBO = device.createBuffer({
-            label: "DRAWABLES_ROT_INSTANCIATED",
-            size: this._parentsObjects.length * this._parentsObjects[0].Rotation.length * Float32Array.BYTES_PER_ELEMENT,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        });
-        this._verticesBO = device.createBuffer({
-            label: "DRAWABLE_VTC",
-            size: this.VertexArray.length * this.VERTECIES_STRIDE,
-            usage: GPUBufferUsage.VERTEX,
-            mappedAtCreation: true
-        });
-    }
-
-    private initOBs() {
-
-        this._positionBO = device.createBuffer({
-            label: "DRAWABLE_POS",
-            size: this._parentObject.Position.length * Float32Array.BYTES_PER_ELEMENT,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        });
-
-        this._scaleBO = device.createBuffer({
-            label: "DRAWABLE_SCAL",
-            size: this._parentObject.Scale.length * Float32Array.BYTES_PER_ELEMENT,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        });
-
-        this._rotationBO = device.createBuffer({
-            label: "DRAWABLE_ROT",
-            size: this._parentObject.Rotation.length * Float32Array.BYTES_PER_ELEMENT,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        });
-
-        this._verticesBO = device.createBuffer({
-            label: "DRAWABLE_VTC",
-            size: this.VertexArray.length * this.VERTECIES_STRIDE,
-            usage: GPUBufferUsage.VERTEX,
-            mappedAtCreation: true
-        });
-
-        if (this._facesArray || this._faceIndexData) {
-            this._facesIndexBO = device.createBuffer({
-                label: "DRAWABLE_FACES",
-                size: this._faceIndexData.length * Uint32Array.BYTES_PER_ELEMENT,
-                usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.INDEX
-            });
-        }
-
-        this.mapVertecies();
-        // else {
-        //     console.error("DRAWABLE: initOBs(): _facesIndexData is null!");
-        // }
-    }
-
-    private mapVertecies() {
-        const verteciesMapping = new Float32Array(this._verticesBO.getMappedRange());
-        var vertexByteOffset = 0;
-        this._vertexArray.forEach((vertex) => {
-            verteciesMapping.set(vertex.pos, vertexByteOffset);
-            vertexByteOffset += vertex.pos.length;
-
-            verteciesMapping.set(vertex.norm, vertexByteOffset);
-            vertexByteOffset += vertex.norm.length;
-        });
-        this._verticesBO.unmap();
-    }
-
-    private mapFaces() {
-        const NUMBER_OF_NUMBERS_IN_FACE = 3;
-        this._faceIndexData = new Uint32Array(this._facesArray.length * NUMBER_OF_NUMBERS_IN_FACE * Uint32Array.BYTES_PER_ELEMENT);
-
-        var idx = 0;
-        this._facesArray.forEach((face) => {
-            this._faceIndexData[idx++] = face.indexes[0];
-            this._faceIndexData[idx++] = face.indexes[1];
-            this._faceIndexData[idx++] = face.indexes[2];
-        })
-    }
-
-    private mapLines() {
-        this._faceIndexData = LineArrayToUInt32(this._linesArray);
-    }
-
-    private initBindGroup() {
-
-        var bindingIdx = 0;
-        var entries: Iterable<GPUBindGroupEntry> = [
-            {
-                binding: bindingIdx++,
-                resource: {
-                    buffer: this._positionBO,
-                    label: `${this._parentObject.Type}-position_uniform`
-                }
-            },
-            {
-                binding: bindingIdx++,
-                resource: {
-                    buffer: this._rotationBO,
-                    label: `${this._parentObject.Type}-rotation_uniform`
-                }
-            },
-            {
-                binding: bindingIdx++,
-                resource: {
-                    buffer: this._scaleBO,
-                    label: `${this._parentObject.Type}-scale_uniform`
-                }
-            },
-            {
-                binding: bindingIdx++,
-                resource: {
-                    buffer: this._cameraProjectionBO,
-                    label: `${this._parentObject.Type}-camera_uniform`
-                }
-            },
-        ];
-
-        //             layout: this.cell_renderPipeline.getBindGroupLayout(0),
-        //             entries: uniformBindGroupEntries
-
-        this._uniformBindGroup = device.createBindGroup({
-            layout: this.RenderPipeline.getBindGroupLayout(0),
-            entries: entries,
-            label: "DRAWABLE_BIND_GROUP"
-        })
-    }
-
-    private writeUniformsDataToBuffers() {
-        if (!device) {
-            console.error("Drawable: writeUniformsDataToBuffers: No device available!");
-            return;
-        }
-
-        device.queue.writeBuffer(
-            this._positionBO,
-            0,
-            this._parentObject.Position.buffer,
-            this._parentObject.Position.byteOffset,
-            this._parentObject.Position.byteLength
-        ); // position
-        device.queue.writeBuffer(
-            this._scaleBO,
-            0,
-            this._parentObject.Scale.buffer,
-            this._parentObject.Scale.byteOffset,
-            this._parentObject.Scale.byteLength
-        ); // rotation
-        device.queue.writeBuffer(
-            this._rotationBO,
-            0,
-            this._parentObject.Rotation.buffer,
-            this._parentObject.Rotation.byteOffset,
-            this._parentObject.Rotation.byteLength
-        ); // scale
-
-        // console.log(`rot ${this._parentObject.Rotation}`)
-        // console.log(`scale ${this._parentObject.Scale}`)
-        // console.log(`pos ${this._parentObject.Position}`)
-
-        if (this._faceIndexData) {
-            device.queue.writeBuffer(
-                this._facesIndexBO,
-                0,
-                this._faceIndexData.buffer,
-                this._faceIndexData.byteOffset,
-                this._faceIndexData.byteLength
-            );
-        }
-    }
-
-    public draw(passEncoder: GPURenderPassEncoder, cameraProjectionBO: GPUBuffer) {
-        this._cameraProjectionBO = cameraProjectionBO;
-        this.writeUniformsDataToBuffers();
-
-        passEncoder.setVertexBuffer(0, this._verticesBO);
-        passEncoder.setPipeline(this.RenderPipeline);
-        passEncoder.setBindGroup(0, this._uniformBindGroup);
-
-        if (this._faceIndexData) {
-            passEncoder.setIndexBuffer(this._facesIndexBO, "uint32");
-            passEncoder.drawIndexed(this._faceIndexData.length, 1, 0, 0, 0);
-        }
-        else {
-            passEncoder.draw(this.VertexArray.length, 1, 0, 0);
-        }
-
-    }
-
+  }
 }

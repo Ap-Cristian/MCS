@@ -5,14 +5,14 @@ import { MouseButtons } from "../res/mouse-buttoncodes.res";
 
 export class InputHandler {
     private KB_keyPressed: boolean[] = new Array<boolean>(104);
-    private MB_keyPressed: boolean[] = new Array<boolean>(false,false,false);
+    private MB_keyPressed: boolean[] = new Array<boolean>(false, false, false);
     private lastMousePos: number[] = new Array<number>(2);
 
     constructor() {
         this.lastMousePos = [-1, -1];
     };
 
-    public mouseWheelHandle(camera:Camera, wheelEvent: WheelEvent): any {
+    public mouseWheelHandler(camera: Camera, wheelEvent: WheelEvent): any {
         const wheelSpeed = wheelEvent.deltaY / 5000;
         if (camera.fovy > 0.01 && wheelSpeed < 0) {
             camera.fovy += wheelSpeed;
@@ -26,28 +26,28 @@ export class InputHandler {
         }
     }
 
-    public mouseMoveInputHandler(camera:Camera, mouseEvent: MouseEvent): any {
+    public mouseMoveInputHandler(camera: Camera, mouseEvent: MouseEvent): any {
         if (this.MB_keyPressed[MouseButtons.LEFT] == false) {
             return;
         }
-    
+
         var mousex = mouseEvent.pageX;
         var mousey = mouseEvent.pageY;
-    
+
         if (this.lastMousePos[0] > 0 && this.lastMousePos[1] > 0) {
             const mouseDeltaX = mousex - this.lastMousePos[0];
             const mouseDeltaY = mousey - this.lastMousePos[1];
 
-            if(!this.KB_keyPressed[Keys.SHIFT_LEFT]){
+            if (!this.KB_keyPressed[Keys.SHIFT_LEFT]) {
                 camera.rotY += mouseDeltaX / 100;
                 camera.rotX += mouseDeltaY / 100;
-            }else{
+            } else {
                 camera.X -= mouseDeltaX / 10;
                 camera.Y += mouseDeltaY / 10;
 
                 camera.LookAt = vec3.fromValues(
-                    camera.LookAt[0] - mouseDeltaX / 10, 
-                    camera.LookAt[1] + mouseDeltaY / 10, 
+                    camera.LookAt[0] - mouseDeltaX / 10,
+                    camera.LookAt[1] + mouseDeltaY / 10,
                     camera.LookAt[2]
                 );
             }

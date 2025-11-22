@@ -1,152 +1,142 @@
-import { McsObject, ObjectParameters } from "../base-classes/objectBase";
 import { Camera } from "./camera";
-import { InputHandler } from "./inputHandler";
+import { InputHandler } from "../input/inputHandler";
 import { Renderer } from "./renderer";
 import { Scene } from "./scene";
-import { CanvasLayers, DrawableObjectType } from "../helpers/renderUtils";
+import { CanvasLayers } from "../helpers/renderUtils";
+import { Binding } from "../input/binding";
+import { vec3 } from "gl-matrix";
 
 const CELLS_DEBUG = false;
 export const NUMBER_OF_CELLS_ON_ROW: number = CELLS_DEBUG ? 10 : 0;
 export const NUMBER_OF_CELLS: number = NUMBER_OF_CELLS_ON_ROW ** 3;
 
 export class Engine {
-    private canvases: HTMLCanvasElement[] = new Array<HTMLCanvasElement>(2); // 0 - WebGPU - canvas, 1 - framerate canvas
-    private scenes: Scene[] = new Array<Scene>();
-    private mainCam: Camera;
-    private mainRenderer: Renderer;
-    // private mainRenderer:WebGpuRenderer;
-    // private mainScene:Scene;
-    private inputHandler: InputHandler;
+  private canvases: HTMLCanvasElement[] = new Array<HTMLCanvasElement>(2); // 0 - WebGPU - canvas, 1 - framerate canvas
+  private mainCam: Camera;
+  private mainRenderer: Renderer;
+  private inputHandler: InputHandler;
+  private cameraZoomRate = 1;
 
-    constructor() {
-        var webGPUCanvas = document.getElementById('webGpu-context') as HTMLCanvasElement;
-        var frameRateCanvas = document.getElementById('framerate-context') as HTMLCanvasElement;
+  constructor() {
+    var webGPUCanvas = document.getElementById(
+      "webGpu-context",
+    ) as HTMLCanvasElement;
+    var frameRateCanvas = document.getElementById(
+      "framerate-context",
+    ) as HTMLCanvasElement;
 
-        this.canvases[CanvasLayers.FRAMERATE_CANVAS] = frameRateCanvas;
+    this.canvases[CanvasLayers.FRAMERATE_CANVAS] = frameRateCanvas;
 
-        if (webGPUCanvas) {
-            webGPUCanvas.width = window.innerWidth;
-            webGPUCanvas.height = window.innerHeight;
+    if (webGPUCanvas) {
+      webGPUCanvas.width = window.innerWidth;
+      webGPUCanvas.height = window.innerHeight;
 
-            this.canvases[CanvasLayers.RENDER_CANVAS] = webGPUCanvas;
+      this.canvases[CanvasLayers.RENDER_CANVAS] = webGPUCanvas;
 
-            addEventListener("resize", () => {
-                this.resizeContextsToWindow();
-            });
-            this.inputHandler = new InputHandler();
+      this.mainCam = new Camera(webGPUCanvas.width / webGPUCanvas.height, true);
+      this.mainCam.Z = 50;
 
-            this.mainCam = new Camera(webGPUCanvas.width / webGPUCanvas.height, true);
-            this.mainCam.Z = 50;
+      this.mainRenderer = new Renderer({
+        scenes: [
+          new Scene({
+            cameras: [this.mainCam],
+            objects: [],
+          }),
+        ],
+        activeSceneIdx: 0,
+        canvases: this.canvases,
+      });
 
-            this.mainRenderer = new Renderer(
-                {
-                    scenes: [
-                        new Scene({
-                            cameras: [this.mainCam],
-                            objects: [
-                                new McsObject({
-                                    type: DrawableObjectType.IMPORTED,
-                                    parameters: {
-                                        X: 0,
-                                        Y: 0,
-                                        Z: 0,
+      this.InitInputHandlingCallbacks(webGPUCanvas);
+      this.beginMainRenderingLoop();
+    }
+  }
 
-                                        RotX: 0,
-                                        RotY: 0,
-                                        RotZ: 0,
+  private InitInputHandlingCallbacks(mainCanvas: HTMLCanvasElement) {
+    this.inputHandler = new InputHandler(mainCanvas);
 
-                                        ScaleX: 1,
-                                        ScaleY: 1,
-                                        ScaleZ: 1
-                                    }
-                                }),
-                            ]
-                        })
-                    ],
-                    activeSceneIndex: 0,
-                    canvases: this.canvases
-                });
+    this.inputHandler.addBinding(
+      new Binding(
+        ["shift", "mouse_move", "left_click"],
+        this.cameraMoveCallback,
+      ),
+    );
+    this.inputHandler.addBinding(
+      new Binding(["left_click", "mouse_move"], this.cameraRotateCallback),
+    );
+    this.inputHandler.addBinding(
+      new Binding(["control", "mouse_scroll"], this.cameraZoomCallback),
+    );
+  }
 
-            // this.mainRenderer = new WebGpuRenderer();
-            // this.mainRenderer.init(this.canvases).then((success)=>{
-            //     if(!success){ 
-            //         console.error("[ERR] Failed to init main renderer, exiting...");
-            //         return;
-            //     }
+  private cameraMoveCallback = () => {
+    const mousex = this.inputHandler.MousePos[0];
+    const mousey = this.inputHandler.MousePos[1];
 
-            //     this.mainCam = new Camera(this.webGPUCanvas.width / this.webGPUCanvas.height);
-            //     this.mainCam.Z = 10;
+    const lastMousex = this.inputHandler.LastMousePos[0];
+    const lastMousey = this.inputHandler.LastMousePos[1];
 
-            //     this.mainScene = new Scene();
+    if (lastMousex > 0 && lastMousey > 0) {
+      const mouseDeltaX = mousex - lastMousex;
+      const mouseDeltaY = mousey - lastMousey;
 
-            //     var time1 = new Date();
-            //     var currentX:number = 0;
-            //     var currentY:number = 0;
-            //     var currentZ:number = 0;
-            //     console.log("Number of cells to be instantiated:", NUMBER_OF_CELLS);
-            //     var cellsCount = 0;
-            //     for(var i = 0; i < NUMBER_OF_CELLS_ON_ROW; i++){
-            //         for(var j = 0; j < NUMBER_OF_CELLS_ON_ROW; j++){
-            //              for(var k = 0; k < NUMBER_OF_CELLS_ON_ROW; k++){
-            //                 this.mainScene.add(new Cell({X:currentX, Y:currentY, Z:currentZ, ScaleX:0.5,ScaleY:0.5,ScaleZ:0.5}));
-            //                 currentX += 2;
-            //                 cellsCount++;
-            //              }
-            //              currentY += 2;
-            //              currentX = 0;
-            //         }
-            //         currentZ += 2;
-            //         currentY = 0;
-            //     }
+      this.mainCam.X -= mouseDeltaX / 10;
+      this.mainCam.Y += mouseDeltaY / 10;
+      this.mainCam.LookAt = vec3.fromValues(
+        this.mainCam.LookAt[0] - mouseDeltaX / 10,
+        this.mainCam.LookAt[1] + mouseDeltaY / 10,
+        this.mainCam.LookAt[2],
+      );
+    }
+  };
 
-            //     this.mainScene.Subject = new Suzanne({X:0, Y:0, Z:0});
+  private cameraRotateCallback = () => {
+    const mousex = this.inputHandler.MousePos[0];
+    const mousey = this.inputHandler.MousePos[1];
 
-            //     //performance probe
-            //     console.log("Instanciated", cellsCount, "cells!");
-            //     var time2 = new Date();
-            //     var dtime = time2.getMilliseconds() - time1.getMilliseconds();
-            //     console.log("Cell init took:", dtime, "ms\n");
-            //     //
-            //     // this.mainRenderer.InitUBOs(this.mainScene, this.mainCam);
+    const lastMousex = this.inputHandler.LastMousePos[0];
+    const lastMousey = this.inputHandler.LastMousePos[1];
 
-            //     this.InitMainRenderingLoop();
-            // });
-            this.InitInputHandlingCallbacks(webGPUCanvas);
-            this.beginMainRenderingLoop();
-        }
+    if (lastMousex > 0 && lastMousey > 0) {
+      const mouseDeltaX = mousex - lastMousex;
+      const mouseDeltaY = mousey - lastMousey;
+
+      this.mainCam.rotX += mouseDeltaY / 100;
+      this.mainCam.rotY += mouseDeltaX / 100;
+    }
+  };
+
+  private cameraZoomCallback = () => {
+    if (this.inputHandler.MouseWheel_deltaY > 0) {
+      this.mainCam.Z += this.cameraZoomRate;
+    } else if (this.mainCam.Z - this.cameraZoomRate > 0) {
+      this.mainCam.Z -= this.cameraZoomRate;
     }
 
-    private InitInputHandlingCallbacks(mainCanvas: HTMLCanvasElement) {
-        const mouseMoveHandlerBind = this.inputHandler.mouseMoveInputHandler.bind(this.inputHandler, this.mainCam);
-        const mouseHandlerBind = this.inputHandler.mouseWheelHandle.bind(this.inputHandler, this.mainCam);
-        const mouseClickHandlerBind = this.inputHandler.mouseClickInputHandler.bind(this.inputHandler);
-        const keyboardHandlerBind = this.inputHandler.keyboardInputHandler.bind(this.inputHandler);
-
-        mainCanvas.onwheel = mouseHandlerBind;
-        mainCanvas.onmousedown = mouseClickHandlerBind;
-        mainCanvas.onmouseup = mouseClickHandlerBind;
-        mainCanvas.onmousemove = mouseMoveHandlerBind;
-
-        window.onkeydown = keyboardHandlerBind;
-        window.onkeyup = keyboardHandlerBind;
+    if (this.mainCam.Z - this.cameraZoomRate <= 0) {
+      this.cameraZoomRate /= 100;
     }
-
-    private resizeContextsToWindow(): void {
-        if (this.canvases) {
-            console.log("[DEBUG] Window resized, updating...");
-            this.canvases[0].width = window.innerWidth;
-            this.canvases[0].height = window.innerHeight;
-            this.canvases[1].width = window.innerWidth;
-            this.mainCam.aspect = this.canvases[0].width / this.canvases[0].height;
-        }
+    if (this.cameraZoomRate < 1 && this.inputHandler.MouseWheel_deltaY > 0) {
+      this.cameraZoomRate *= 10;
     }
+  };
 
-    private beginMainRenderingLoop() {
-        const doFrame = () => {
-            this.mainRenderer.update();
-            this.mainRenderer.draw();
-            requestAnimationFrame(doFrame);
-        };
-        requestAnimationFrame(doFrame);
+  private resizeContextsToWindow(): void {
+    if (this.canvases) {
+      console.log("[DEBUG] Window resized, updating...");
+      this.canvases[0].width = window.innerWidth;
+      this.canvases[0].height = window.innerHeight;
+      this.canvases[1].width = window.innerWidth;
+      this.mainCam.aspect = this.canvases[0].width / this.canvases[0].height;
     }
+  }
+
+  private beginMainRenderingLoop() {
+    const doFrame = () => {
+      this.mainRenderer.update();
+      this.mainRenderer.draw();
+      requestAnimationFrame(doFrame);
+    };
+    requestAnimationFrame(doFrame);
+  }
 }
