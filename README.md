@@ -1,7 +1,6 @@
 # Metal Cooling Simulator (MCS)
 Web-based Metal Cooling Simulator made form scratch using WebGPU.
-# Chimera & Equinox
-Both apps use the same command set:
+# Equinox
 
 Firstly, install the required dependencies using
 ```
@@ -15,7 +14,6 @@ To run just use
 ```
 npm run start
 ```
-** Chimera should be started first **
 
 ![image](https://github.com/Ap-Cristian/eutectics/assets/91757763/b87a7b97-c0fb-4cd1-8eb8-305b3d9b688a)
 * Instancing
