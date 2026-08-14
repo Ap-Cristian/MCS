@@ -1,13 +1,13 @@
 import { Camera } from "./camera";
 import { InputHandler } from "../core/input/inputHandler";
-import { Renderer } from "./renderer";
+import { FrameController } from "./frameController";
 import { Scene } from "./scene";
 import { CanvasLayers } from "../core/helpers/renderUtils";
 import { Binding } from "../core/input/binding";
 import { vec3 } from "gl-matrix";
 import { Vector } from "../renders/vectorRender";
 import { EqBufferF32 } from "./buffers/buffer_float32";
-import { Drawable } from "../drawables/drawable";
+import { Render } from "../renders/render";
 import { SimMath } from "../core/helpers/simMath";
 
 const FPS: number = 45;
@@ -17,7 +17,7 @@ export var cpm: EqBufferF32;
 export class Engine {
   private canvases: HTMLCanvasElement[] = new Array<HTMLCanvasElement>(2); // 0 - WebGPU - canvas, 1 - framerate canvas
   private mainCam?: Camera;
-  private mainRenderer?: Renderer;
+  private frameController?: FrameController;
   private inputHandler?: InputHandler;
   private cameraZoomRate: number = 1;
 
@@ -76,17 +76,17 @@ export class Engine {
   private initRenderer() {
     if (!this.mainCam || !cpm) return;
     
-    this.mainRenderer = new Renderer({
+    this.frameController = new FrameController({
       canvases: this.canvases,
     });
     
     const scene = this.initScene();
     if (scene)
-      this.mainRenderer.Scene = scene;
+      this.frameController.Scene = scene;
   }
 
   private initScene(): Scene | undefined {
-    const drawables: Drawable[] = []
+    const renders: Render[] = []
 
     let testVector1 = new Vector(
       new SimMath.Vector3([0,0,0]), 
@@ -109,13 +109,13 @@ export class Engine {
       'Test'
     );
 
-    drawables.push(testVector1);
-    drawables.push(testVector2);
-    drawables.push(testVector3);
+    renders.push(testVector1);
+    renders.push(testVector2);
+    renders.push(testVector3);
 
     return new Scene({
       cameras: [this.mainCam],
-      drawables: drawables
+      renders: renders
     })
   }
 
@@ -217,8 +217,8 @@ export class Engine {
 
   private beginMainRenderingLoop() {
     const doFrame = () => {
-      this.mainRenderer?.update();
-      this.mainRenderer?.draw();
+      this.frameController?.update();
+      this.frameController?.draw();
       setTimeout(() => {
         requestAnimationFrame(doFrame);
       }, 1000 / FPS); // BAD but works for now

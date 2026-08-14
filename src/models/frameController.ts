@@ -5,18 +5,18 @@ import {
   createRenderPassDescriptor,
   depthTextureView,
 } from "../core/helpers/renderUtils";
-import { Drawable } from "../drawables/drawable";
+import { Render } from "../renders/render";
 import { device } from "./engine";
 
 export var adapter: GPUAdapter;
 
-export interface RendererParams {
+export interface FrameControllerParams {
   canvases: HTMLCanvasElement[];
 }
 
-export class Renderer {
+export class FrameController {
   private scene: Scene;
-  private _drawables: Drawable[] = [];
+  private _drawables: Render[] = [];
   private cameraProjectionArray: Float32Array;
   private renderPassDescriptor: GPURenderPassDescriptor;
   private commandEncoder: GPUCommandEncoder;
@@ -27,11 +27,11 @@ export class Renderer {
   private depthTexture: GPUTexture;
   private depthTextureView: GPUTextureView;
 
-  constructor(rendererParams: RendererParams) {
+  constructor(rendererParams: FrameControllerParams) {
     this.initRenderer(rendererParams);
   }
 
-  private initRenderer(rendererParams: RendererParams) {
+  private initRenderer(rendererParams: FrameControllerParams) {
     this.initContexts(rendererParams.canvases);
     this.initRenderPassDescriptor(
       rendererParams.canvases[CanvasLayers.RENDER_CANVAS],

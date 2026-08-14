@@ -2,7 +2,7 @@ import { generateRenderPipeline, ObjectTopology } from "../core/helpers/renderUt
 import { ObjectMetadata } from "../core/interfaces/import-object.metadata";
 import { EqBufferF32 } from "../models/buffers/buffer_float32";
 import { EqBufferU32 } from "../models/buffers/buffer_uint32";
-import { Drawable } from "../drawables/drawable";
+import { Render } from "./render";
 import { cpm, device } from "../models/engine";
 import { McsObject } from "../models/objectBase";
 
@@ -20,72 +20,7 @@ interface VectorRenderParams {
   cpmBuffer: EqBufferF32,
 }
 
-// export class Vector {
-//   private _object: McsObject;
-//   private _drawable: Drawable;
-
-//   private initBuffers() {
-
-//   }
-
-//   constructor(
-//     _pos: SimMath.Vector3, 
-//     _rot: SimMath.Vector3, 
-//     _scal: SimMath.Vector3
-//   ) {
-//     this._object = new McsObject();
-
-//     this._object.X = _pos.X;
-//     this._object.Y = _pos.Y;
-//     this._object.Z = _pos.Z;
-
-//     this._object.RotationX = _rot.X;
-//     this._object.RotationY = _rot.Y;
-//     this._object.RotationZ = _rot.Z;
-
-//     this._object.ScaleX = _scal.X;
-//     this._object.ScaleY = _scal.Y;
-//     this._object.ScaleZ = _scal.Z;
-
-//     this._object.name = "Vector";
-
-//     const renderMeta: ObjectMetadata = new ObjectMetadata(arrowVertecies);
-
-//     const pipeline = generateRenderPipeline({
-//       device: device,
-//       vertexShaderCode: arrowVertex,
-//       fragmentShaderCode: arrowFragment,
-//       topology: ObjectTopology.TRIANGLE_LIST,
-//     })
- 
-//     // ************* buffers **************
-//     let verteciesBuffer = new EqBufferF32(
-//       device,
-//       renderMeta.VerteciesToFlatArray,
-//       GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX,
-//       "outline_shader_vertecies_buffer"
-//     )
-
-//     let verteciesIndexBuffer = new EqBufferU32(
-//       device,
-//       renderMeta.VerteciesIndexesFlat,
-//       GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-//       'vector_shader_vertecies_index_buffer'
-//     )
-
-//     let modelMatrixBuffer = new EqBufferF32(
-//       device,
-//       params.baseObject.ModelMatrix as number[],
-//       GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-//       "vector_shader_model_matrix_buffer"
-//     )
-//     // ************************************
-//   }
-// }
-
-
-
-export class VectorRender extends Drawable {
+export class VectorRender extends Render {
   constructor(params: VectorRenderParams) {
     const renderMeta: ObjectMetadata = new ObjectMetadata(params.vertecies);
 

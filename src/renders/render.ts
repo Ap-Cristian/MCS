@@ -30,7 +30,7 @@ export interface Vertecies {
   perVertexLength: number;
 }
 
-export interface DrawableParams {
+export interface RenderParams {
   shaderBuffers: Array<EqBufferF32>;
   verteciesBuf: EqBufferF32;
   renderPipeline: GPURenderPipeline;
@@ -38,7 +38,7 @@ export interface DrawableParams {
   verteciesIndexBuf?: EqBufferU32 | undefined; 
 }
 
-export class Drawable {
+export class Render {
   protected verteciesBuffer?: EqBufferF32;
   private buffers: Array<EqBufferF32> = [];
   private bufferResources: Array<ShaderResource> = [];
@@ -58,7 +58,7 @@ export class Drawable {
     return false;
   }
 
-  constructor(params: DrawableParams) {
+  constructor(params: RenderParams) {
     if (!checkDeviceAvailability(device)) {
       console.error("Drawable: Drawable() No GPU available");
       return;

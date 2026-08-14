@@ -1,4 +1,4 @@
-import { Drawable, Vertecies } from "../drawables/drawable";
+import { Render, Vertecies } from "./render";
 import {
   generateRenderPipeline,
   IVertexArrToF32Arr,
@@ -11,7 +11,7 @@ import cellFragment from "../core/shaders/cell/cell.fragment.wgsl";
 import cellVertex from "../core/shaders/cell/cell.vertex.wgsl";
 import { vertices as CellVertecies } from "../core/shaders/cell/cell.mesh";
 
-export class MACGridDrawable extends Drawable {
+export class MACGridDrawable extends Render {
   // private grid: MACGridModel;
 
   // constructor(

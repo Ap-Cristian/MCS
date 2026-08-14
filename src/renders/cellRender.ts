@@ -3,7 +3,7 @@ import { generateRenderPipeline, ObjectTopology } from "../core/helpers/renderUt
 import { ObjectMetadata } from "../core/interfaces/import-object.metadata";
 import { EqBufferF32 } from "../models/buffers/buffer_float32";
 import { EqBufferU32 } from "../models/buffers/buffer_uint32";
-import { Drawable } from "../drawables/drawable";
+import { Render } from "./render";
 import { device } from "../models/engine";
 import { McsObject } from "../models/objectBase";
 
@@ -15,7 +15,7 @@ interface CellRenderParams {
   cpmBuffer: EqBufferF32,
 }
 
-export class CellRender extends Drawable {
+export class CellRender extends Render {
   constructor(params: CellRenderParams) {
     const renderMeta: ObjectMetadata = new ObjectMetadata(params.vertecies);
     

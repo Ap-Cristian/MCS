@@ -1,4 +1,4 @@
-import { Drawable, Vertecies } from "../drawables/drawable";
+import { Render, Vertecies } from "../renders/render";
 import {
   generateRenderPipeline,
   IVertexArrToF32Arr,
@@ -15,7 +15,7 @@ import sphereObj from "../core/shaders/sphere/sphere.obj";
 import { McsObject } from "../models/objectBase";
 import { IVertex } from "../core/interfaces/IVertex";
 
-export class SphereDrawable extends Drawable {
+export class SphereDrawable extends Render {
   // private facesUINT16: Uint16Array;
   // private facesBuffer: GPUBuffer;
   // constructor(

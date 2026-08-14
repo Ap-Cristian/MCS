@@ -1,17 +1,17 @@
 import { Camera } from "./camera";
-import { Drawable } from "../drawables/drawable";
+import { Render } from "../renders/render";
 
 export interface SceneParams {
   cameras: Array<Camera>;
-  drawables?: Array<Drawable>;
+  renders?: Array<Render>;
 }
 export class Scene {
-  private _focusedDrawable: Drawable | undefined;
+  private _focusedDrawable: Render | undefined;
   private _cameras: Camera[] = new Array<Camera>();
-  private _drawables: Drawable[] = [];
+  private _drawables: Render[] = [];
  
   constructor(sceneParams: SceneParams) {
-    this._drawables = sceneParams.drawables ?? [];
+    this._drawables = sceneParams.renders ?? [];
     this._cameras = sceneParams.cameras;
     //camera changes but value reference not updating
 
@@ -20,7 +20,7 @@ export class Scene {
     }
   }
 
-  public add(drawable?: Drawable | Array<Drawable>) {
+  public add(drawable?: Render | Array<Render>) {
     if (!drawable) return;
     if (Array.isArray(drawable)) {
       drawable.forEach((obj) => {
@@ -43,13 +43,13 @@ export class Scene {
     return null;
   }
 
-  public get Drawables(): Drawable[] | null {
+  public get Drawables(): Render[] | null {
     if (this._drawables) return this._drawables;
     console.warn("Scene: Scene is empty.");
     return null;
   }
 
-  public get FocusedDrawable(): Drawable | undefined{
+  public get FocusedDrawable(): Render | undefined{
     return this._focusedDrawable;
   }
 }
