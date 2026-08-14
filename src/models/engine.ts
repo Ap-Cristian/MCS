@@ -7,7 +7,7 @@ import { Binding } from "../core/input/binding";
 import { vec3 } from "gl-matrix";
 import { Vector } from "../renders/vectorRender";
 import { EqBufferF32 } from "./buffers/buffer_float32";
-import { Drawable } from "./drawable";
+import { Drawable } from "../drawables/drawable";
 import { SimMath } from "../core/helpers/simMath";
 
 const FPS: number = 45;
@@ -88,48 +88,30 @@ export class Engine {
   private initScene(): Scene | undefined {
     const drawables: Drawable[] = []
 
-    let testVector = new Vector(
+    let testVector1 = new Vector(
       new SimMath.Vector3([0,0,0]), 
       new SimMath.Vector3([0,0,0]), 
-      new SimMath.Vector3([0,0,0]),
+      new SimMath.Vector3([1,1,1]),
       'Test'
     );
 
-    drawables.push(testVector);
-    console.log("added test drawable")
-    console.log(testVector)
+    let testVector2 = new Vector(
+      new SimMath.Vector3([10,0,0]), 
+      new SimMath.Vector3([0,0,0]), 
+      new SimMath.Vector3([1,1,1]),
+      'Test'
+    );
 
-    const count_X = 1;
-    const count_Y = 1;
-    const count_Z = 1;
+    let testVector3 = new Vector(
+      new SimMath.Vector3([20,0,0]), 
+      new SimMath.Vector3([0,0,0]), 
+      new SimMath.Vector3([1,1,1]),
+      'Test'
+    );
 
-    const gap = 4;
-
-    // for (let i = 0; i < count_X; i++) {
-    //   for (let j = 0; j < count_Y; j++) {
-    //     // for (let k = 0; k < count_Z; k++) {
-    //     //   drawables.push(
-    //     //     new Vector(
-    //     //       new McsObject({
-    //     //         parameters: {
-    //     //           X: x,
-    //     //           Y: y,
-    //     //           Z: z,
-    //     //           ScaleY: 1.4
-    //     //         }
-    //     //       }),
-    //     //       this.cpm,
-    //     //       `test_vector${i}`
-    //     //     ));
-    //       x += gap;
-    //     }
-    //     x = 0;
-    //     y += gap;
-    //   }
-    //   x = 0;
-    //   y = 0;
-    //   z += gap
-    // }
+    drawables.push(testVector1);
+    drawables.push(testVector2);
+    drawables.push(testVector3);
 
     return new Scene({
       cameras: [this.mainCam],

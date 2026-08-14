@@ -3,7 +3,7 @@ import { generateRenderPipeline, ObjectTopology } from "../core/helpers/renderUt
 import { ObjectMetadata } from "../core/interfaces/import-object.metadata";
 import { EqBufferF32 } from "../models/buffers/buffer_float32";
 import { EqBufferU32 } from "../models/buffers/buffer_uint32";
-import { Drawable } from "../models/drawable";
+import { Drawable } from "../drawables/drawable";
 import { device } from "../models/engine";
 import { McsObject } from "../models/objectBase";
 

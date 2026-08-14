@@ -1,4 +1,4 @@
-import { Drawable, Vertecies } from "../models/drawable";
+import { Drawable, Vertecies } from "../drawables/drawable";
 import {
   generateRenderPipeline,
   IVertexArrToF32Arr,

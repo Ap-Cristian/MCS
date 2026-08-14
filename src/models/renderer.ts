@@ -5,7 +5,7 @@ import {
   createRenderPassDescriptor,
   depthTextureView,
 } from "../core/helpers/renderUtils";
-import { Drawable } from "./drawable";
+import { Drawable } from "../drawables/drawable";
 import { device } from "./engine";
 
 export var adapter: GPUAdapter;
@@ -46,8 +46,14 @@ export class Renderer {
 
   public set Scene(scene:Scene) {
     this.scene = scene;
-    this.cameraProjectionArray = this.scene.ActiveCamera.getProjectionArray();
-    this._drawables = this.scene.Drawables;
+    
+    if(this.scene.ActiveCamera) {
+      this.cameraProjectionArray = this.scene.ActiveCamera.getProjectionArray();
+    }
+
+    if(this.scene.Drawables) {
+      this._drawables = this.scene.Drawables;
+    }
   }
 
   private pushErrorScopes() {
@@ -84,7 +90,9 @@ export class Renderer {
 
   private updateCamera() {
     var activeSceneCamera = this.scene.ActiveCamera;
-    this.cameraProjectionArray.set(activeSceneCamera.getProjectionArray(), 0);
+    if(activeSceneCamera) {
+      this.cameraProjectionArray.set(activeSceneCamera.getProjectionArray(), 0);
+    }
   }
 
   private initRenderPassDescriptor(canvas: HTMLCanvasElement) {

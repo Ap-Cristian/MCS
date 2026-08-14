@@ -2,9 +2,9 @@ import { generateRenderPipeline, ObjectTopology } from "../core/helpers/renderUt
 import { ObjectMetadata } from "../core/interfaces/import-object.metadata";
 import { EqBufferF32 } from "../models/buffers/buffer_float32";
 import { EqBufferU32 } from "../models/buffers/buffer_uint32";
-import { Drawable } from "../models/drawable";
+import { Drawable } from "../drawables/drawable";
 import { cpm, device } from "../models/engine";
-import { McsObj, McsObject } from "../models/objectBase";
+import { McsObject } from "../models/objectBase";
 
 import arrowFragment from "../core/shaders/vector-arrow/arrow.fragment.wgsl";
 import arrowVertex from "../core/shaders/vector-arrow/arrow.vertex.wgsl";

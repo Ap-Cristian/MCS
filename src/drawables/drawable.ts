@@ -1,7 +1,7 @@
 import { checkDeviceAvailability } from "../core/helpers/renderUtils";
-import { EqBufferF32 } from "./buffers/buffer_float32";
-import { EqBufferU32 } from "./buffers/buffer_uint32";
-import { device } from "./engine";
+import { EqBufferF32 } from "../models/buffers/buffer_float32";
+import { EqBufferU32 } from "../models/buffers/buffer_uint32";
+import { device } from "../models/engine";
 
 // newDrawable needs:
 // at least a vertexArray

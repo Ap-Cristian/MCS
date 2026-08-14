@@ -1,6 +1,5 @@
 import { Camera } from "./camera";
-import { MACGridModel } from "./macGrid";
-import { Drawable } from "./drawable";
+import { Drawable } from "../drawables/drawable";
 
 export interface SceneParams {
   cameras: Array<Camera>;
@@ -10,13 +9,11 @@ export class Scene {
   private _focusedDrawable: Drawable | undefined;
   private _cameras: Camera[] = new Array<Camera>();
   private _drawables: Drawable[] = [];
-  private _grid: MACGridModel;
  
   constructor(sceneParams: SceneParams) {
     this._drawables = sceneParams.drawables ?? [];
     this._cameras = sceneParams.cameras;
     //camera changes but value reference not updating
-    this._grid = new MACGridModel([8, 2, 8]);
 
     if (this._drawables && this._drawables.length) {
       this._focusedDrawable = this._drawables[0];
@@ -44,10 +41,6 @@ export class Scene {
     }
     console.error("Scene: No active camera.");
     return null;
-  }
-
-  public get Grid(): MACGridModel {
-    return this._grid;
   }
 
   public get Drawables(): Drawable[] | null {

@@ -1,5 +1,5 @@
 import { Vec2 } from "wgpu-matrix";
-import { SimMath } from "../core/helpers/simMath";
+import { SimMath } from "../../../core/helpers/simMath";
 import { meshgrid } from "@tensorflow/tfjs";
 
 function printMatrix2D(m: Array<Array<number>>) {
