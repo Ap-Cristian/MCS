@@ -9,7 +9,7 @@ import { device } from "../models/engine";
 
 import cellFragment from "../core/shaders/cell/cell.fragment.wgsl";
 import cellVertex from "../core/shaders/cell/cell.vertex.wgsl";
-import { vertices as CellVertecies } from "../core/shaders/cell/cell.mesh";
+import { vertices as CellVertecies } from "../core/shaders/graphics/cell/cell.mesh";
 
 export class MACGridDrawable extends Render {
   // private grid: MACGridModel;

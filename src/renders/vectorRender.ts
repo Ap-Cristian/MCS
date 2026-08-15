@@ -6,9 +6,9 @@ import { Render } from "./render";
 import { cpm, device } from "../models/engine";
 import { McsObject } from "../models/objectBase";
 
-import arrowFragment from "../core/shaders/vector-arrow/arrow.fragment.wgsl";
-import arrowVertex from "../core/shaders/vector-arrow/arrow.vertex.wgsl";
-import arrowVertecies from "../core/shaders/vector-arrow/vector.obj";
+import arrowFragment from "../core/shaders/graphics/vector-arrow/arrow.fragment.wgsl";
+import arrowVertex from "../core/shaders/graphics/vector-arrow/arrow.vertex.wgsl";
+import arrowVertecies from "../core/shaders/graphics/vector-arrow/vector.obj";
 import { SimMath } from "../core/helpers/simMath";
 
 interface VectorRenderParams {

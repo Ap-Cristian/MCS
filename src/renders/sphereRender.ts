@@ -1,4 +1,4 @@
-import { Render, Vertecies } from "../renders/render";
+import { Render, Vertecies } from "./render";
 import {
   generateRenderPipeline,
   IVertexArrToF32Arr,
